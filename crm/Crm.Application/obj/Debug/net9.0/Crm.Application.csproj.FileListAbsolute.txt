@@ -1,0 +1,12 @@
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/crm/Crm.Application/bin/Debug/net9.0/Crm.Application.deps.json
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/crm/Crm.Application/bin/Debug/net9.0/Crm.Application.dll
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/crm/Crm.Application/bin/Debug/net9.0/Crm.Application.pdb
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/crm/Crm.Application/obj/Debug/net9.0/Crm.Application.GeneratedMSBuildEditorConfig.editorconfig
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/crm/Crm.Application/obj/Debug/net9.0/Crm.Application.AssemblyInfoInputs.cache
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/crm/Crm.Application/obj/Debug/net9.0/Crm.Application.AssemblyInfo.cs
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/crm/Crm.Application/obj/Debug/net9.0/Crm.Application.csproj.CoreCompileInputs.cache
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/crm/Crm.Application/obj/Debug/net9.0/Crm.Application.sourcelink.json
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/crm/Crm.Application/obj/Debug/net9.0/Crm.Application.dll
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/crm/Crm.Application/obj/Debug/net9.0/refint/Crm.Application.dll
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/crm/Crm.Application/obj/Debug/net9.0/Crm.Application.pdb
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/crm/Crm.Application/obj/Debug/net9.0/ref/Crm.Application.dll

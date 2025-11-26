@@ -1,0 +1,15 @@
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/credits/Credit.Infrastructure/bin/Debug/net9.0/Credit.Infrastructure.deps.json
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/credits/Credit.Infrastructure/bin/Debug/net9.0/Credit.Infrastructure.dll
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/credits/Credit.Infrastructure/bin/Debug/net9.0/Credit.Infrastructure.pdb
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/credits/Credit.Infrastructure/obj/Debug/net9.0/Credit.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/credits/Credit.Infrastructure/obj/Debug/net9.0/Credit.Infrastructure.AssemblyInfoInputs.cache
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/credits/Credit.Infrastructure/obj/Debug/net9.0/Credit.Infrastructure.AssemblyInfo.cs
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/credits/Credit.Infrastructure/obj/Debug/net9.0/Credit.Infrastructure.csproj.CoreCompileInputs.cache
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/credits/Credit.Infrastructure/obj/Debug/net9.0/Credit.Infrastructure.sourcelink.json
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/credits/Credit.Infrastructure/obj/Debug/net9.0/Credit.Infrastructure.dll
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/credits/Credit.Infrastructure/obj/Debug/net9.0/refint/Credit.Infrastructure.dll
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/credits/Credit.Infrastructure/obj/Debug/net9.0/Credit.Infrastructure.pdb
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/credits/Credit.Infrastructure/obj/Debug/net9.0/ref/Credit.Infrastructure.dll
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/credits/Credit.Infrastructure/bin/Debug/net9.0/Credit.Infrastructure.runtimeconfig.json
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/credits/Credit.Infrastructure/obj/Debug/net9.0/Credit.Infrastructure.csproj.AssemblyReference.cache
+/Users/home/Documents/GitHub/ProyectoFullErp/erp-microservices/credits/Credit.Infrastructure/obj/Debug/net9.0/Credit.Infrastructure.genruntimeconfig.cache
