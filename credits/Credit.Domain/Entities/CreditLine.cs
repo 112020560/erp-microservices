@@ -1,4 +1,8 @@
-﻿namespace Credit.Domain.Entities;
+﻿using System.Text.Json;
+using System.Text.Json.Nodes;
+using Credit.Domain.Models;
+
+namespace Credit.Domain.Entities;
 
 public partial class CreditLine
 {
@@ -39,4 +43,24 @@ public partial class CreditLine
     public virtual ICollection<Installment> Installments { get; set; } = new List<Installment>();
 
     public virtual CreditProduct? Product { get; set; }
+
+    public CreditLineModel ToModel()
+    {
+        return new CreditLineModel
+        {
+            Id = Id,
+            ApplicationId = ApplicationId,
+            CustomerId = CustomerId,
+            ProductId = ProductId,
+            Principal = Principal,
+            Outstanding = Outstanding,
+            Currency = Currency,
+            StartDate = StartDate,
+            EndDate = EndDate,
+            Status = Status,
+            AmortizationSchedule = !string.IsNullOrEmpty(AmortizationSchedule)
+                ? JsonSerializer.Deserialize<PaymentScheduleModel[]>(AmortizationSchedule) : null,
+            Metadata = Metadata,
+        };
+    }
 }

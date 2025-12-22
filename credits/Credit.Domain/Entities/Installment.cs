@@ -5,6 +5,7 @@ public partial class Installment
     public Guid Id { get; set; }
 
     public Guid? CreditLineId { get; set; }
+    public int QuotaNumber { get; set; }
 
     public DateOnly DueDate { get; set; }
 

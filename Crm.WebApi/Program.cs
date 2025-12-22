@@ -1,41 +1,73 @@
+using System.Reflection;
+using Asp.Versioning;
+using Crm.Application;
+using Crm.Infrastructure;
+using Crm.WebApi;
+using Crm.WebApi.Extensions;
+using Serilog;
+using SmartCore.Telemetry;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Host.UseSerilog((context, loggerConfig) => loggerConfig.ReadFrom.Configuration(context.Configuration));
+
+builder.Services.AddSmartCoreTelemetry(options =>
+{
+    options.ServiceName = "credit-service";
+    options.Version = "1.0.0";
+    options.Environment = builder.Environment.EnvironmentName;
+
+    // Jaeger local
+    options.OtlpEndpoint = "http://localhost:4317";
+
+    // Instrumentaciones
+    options.EnableMassTransit = true;
+    options.EnableRedis = false;
+
+    // 100% sampling (dev)
+    options.SamplerRatio = 1.0;
+});
+
+builder.Services.AddSwaggerGen();
+
+builder.Services
+    .AddApplication()
+    .AddPresentation()
+    .AddInfrastructure(builder.Configuration);
+
+builder.Services.AddEndpoints(Assembly.GetExecutingAssembly());
+
+builder.Services.AddApiVersionExtension();
 
 var app = builder.Build();
+
+var apiVersionSet = app.NewApiVersionSet()
+    .HasApiVersion(new ApiVersion(1))
+    .ReportApiVersions()
+    .Build();
+
+var versionsGroup = app.MapGroup("api/v{version:apiVersion}")
+    .WithApiVersionSet(apiVersionSet);
+app.MapEndpoints(versionsGroup);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwaggerWithUi();
 }
+
+app.MapHealthChecks("/api/health");
+
+app.UseRequestContextLogging();
+
+app.UseSerilogRequestLogging();
+
+app.UseExceptionHandler();
+
+app.UseAuthentication();
+
+app.UseAuthorization();
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast");
-
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

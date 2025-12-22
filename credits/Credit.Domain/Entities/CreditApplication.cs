@@ -1,4 +1,7 @@
-﻿namespace Credit.Domain.Entities;
+﻿using System.Runtime.InteropServices;
+using Credit.Domain.Models;
+
+namespace Credit.Domain.Entities;
 
 public partial class CreditApplication
 {
@@ -29,4 +32,20 @@ public partial class CreditApplication
     public virtual Customer? Customer { get; set; }
 
     public virtual CreditProduct? Product { get; set; }
+
+    public  CreditApplicationModel MapToModel()
+    {
+        return new CreditApplicationModel
+        {
+            Id = this.Id,
+            CustomerId = this.CustomerId,
+            ProductId = this.ProductId,
+            Amount = this.Amount,
+            TermMonths = this.TermMonths,
+            Status = this.Status,
+            Score = this.Score,
+            DecisionNotes = this.DecisionNotes,
+            Documents = this.Documents
+        };
+    }
 }
