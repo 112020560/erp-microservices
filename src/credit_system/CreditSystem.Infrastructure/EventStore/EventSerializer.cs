@@ -16,13 +16,14 @@ public class JsonEventSerializer : IEventSerializer
         _options = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true, 
             WriteIndented = false,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             Converters =
             {
                 new JsonStringEnumConverter(),
-                new MoneyJsonConverter(),
-                new InterestRateJsonConverter()
+                // new MoneyJsonConverter(),
+                // new InterestRateJsonConverter()
             }
         };
 

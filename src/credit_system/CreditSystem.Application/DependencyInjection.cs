@@ -1,14 +1,16 @@
 ﻿using CreditSystem.Application.Behaviors;
+using CreditSystem.Application.Configuration;
 using CreditSystem.Application.Job;
 using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CreditSystem.Application;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+    public static IServiceCollection AddApplication(this IServiceCollection services, IConfiguration configuration)
         => services.AddMediatRConfiguration()
                     .AddJobsConfiguration();
     
@@ -30,9 +32,18 @@ public static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddJobsConfiguration(this IServiceCollection services)
+    private static IServiceCollection AddJobsConfiguration(this IServiceCollection services)
     {
         services.AddScoped<IInterestAccrualJob, InterestAccrualJob>();
+        services.AddScoped<IPaymentMissedJob, PaymentMissedJob>();
+        return services;
+    }
+
+    private static IServiceCollection AddConfigurationService(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<LateFeeConfiguration>(
+            configuration.GetSection("LateFee"));
+
         return services;
     }
 }

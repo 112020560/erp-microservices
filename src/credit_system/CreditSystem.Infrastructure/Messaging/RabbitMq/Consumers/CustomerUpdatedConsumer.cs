@@ -1,5 +1,6 @@
 using Dapper;
 using MassTransit;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using SharedKernel.Contracts.Crm.Customers;
@@ -11,9 +12,9 @@ public class CustomerUpdatedConsumer: IConsumer<CustomerUpdated>
     private readonly string _connectionString;
     private readonly ILogger<CustomerUpdatedConsumer> _logger;
 
-    public CustomerUpdatedConsumer(string connectionString, ILogger<CustomerUpdatedConsumer> logger)
+    public CustomerUpdatedConsumer(IConfiguration configuration, ILogger<CustomerUpdatedConsumer> logger)
     {
-        _connectionString = connectionString;
+        _connectionString = configuration.GetConnectionString("CreditDb")!;
         _logger = logger;
     }
     

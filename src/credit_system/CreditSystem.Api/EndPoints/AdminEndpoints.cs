@@ -27,6 +27,19 @@ public static class AdminEndpoints
             .WithSummary("Manually accrue interest for a specific loan")
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
+        
+        group.MapPost("/jobs/payment-missed", RunPaymentMissedJob)
+            .WithName("RunPaymentMissedJob")
+            .WithSummary("Manually trigger payment missed detection job")
+            .Produces(StatusCodes.Status200OK);
+    }
+    
+    private static async Task<IResult> RunPaymentMissedJob(
+        [FromServices] IPaymentMissedJob job,
+        CancellationToken cancellationToken)
+    {
+        await job.ExecuteAsync(cancellationToken);
+        return Results.Ok(new { Message = "Payment missed job completed" });
     }
 
     private static async Task<IResult> RunInterestAccrualJob(

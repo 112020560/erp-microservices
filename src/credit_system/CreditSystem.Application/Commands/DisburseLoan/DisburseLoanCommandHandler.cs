@@ -50,11 +50,14 @@ public class DisburseLoanCommandHandler : IRequestHandler<DisburseLoanCommand, D
             return DisburseLoanResponse.Failed(ex.Message);
         }
 
+        // Guardar eventos ANTES de persistir
+        var events = aggregate.UncommittedEvents.ToList();
+
         // 3. Persistir eventos
         await _repository.SaveAsync(aggregate, cancellationToken);
 
         // 4. Proyectar eventos
-        foreach (var @event in aggregate.UncommittedEvents)
+        foreach (var @event in events)
         {
             await _projectionEngine.ProjectEventAsync(@event, cancellationToken);
         }

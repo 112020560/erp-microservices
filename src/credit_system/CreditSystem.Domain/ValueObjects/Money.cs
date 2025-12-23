@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using CreditSystem.Domain.Exceptions;
 
 namespace CreditSystem.Domain.ValueObjects;
@@ -7,12 +8,19 @@ public record Money
 {
     public decimal Amount { get; }
     public string Currency { get; }
+    
+    [JsonConstructor]
+    public Money()
+    {
+        Amount = 0;
+        Currency = "USD";
+    }
 
     public Money(decimal amount, string currency = "USD")
     {
         if (amount < 0)
             throw new DomainException("Money cannot be negative");
-        
+
         Amount = Math.Round(amount, 2);
         Currency = currency;
     }

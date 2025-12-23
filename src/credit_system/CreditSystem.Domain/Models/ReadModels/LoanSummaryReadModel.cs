@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace CreditSystem.Domain.Models.ReadModels;
 
 public class LoanSummaryReadModel
@@ -25,6 +27,8 @@ public class LoanSummaryReadModel
     public DateTime UpdatedAt { get; set; }
 
     // Computed
+    [JsonIgnore]
     public decimal TotalOwed => CurrentBalance + AccruedInterest + TotalFees;
+    [JsonIgnore]
     public bool IsDelinquent => PaymentsMissed > 0;
 }

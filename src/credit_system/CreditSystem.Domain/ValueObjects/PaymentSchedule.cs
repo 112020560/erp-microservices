@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace CreditSystem.Domain.ValueObjects;
 
 public record PaymentSchedule
@@ -5,6 +7,15 @@ public record PaymentSchedule
     public IReadOnlyList<AmortizationEntry> Entries { get; }
     public Money TotalInterest { get; }
     public Money TotalPayment { get; }
+
+    // Constructor sin parámetros para deserialización
+    [JsonConstructor]
+    public PaymentSchedule()
+    {
+        Entries = Array.Empty<AmortizationEntry>();
+        TotalInterest = Money.Zero();
+        TotalPayment = Money.Zero();
+    }
 
     public PaymentSchedule(IEnumerable<AmortizationEntry> entries)
     {
@@ -40,12 +51,12 @@ public record PaymentSchedule
             }
 
             entries.Add(new AmortizationEntry(
-                PaymentNumber: i,
-                DueDate: startDate.AddMonths(i),
-                TotalPayment: monthlyPayment,
-                Principal: principalPaid,
-                Interest: interest,
-                Balance: balance
+                paymentNumber: i,
+                dueDate: startDate.AddMonths(i),
+                totalPayment: monthlyPayment,
+                principal: principalPaid,
+                interest: interest,
+                balance: balance
             ));
         }
 

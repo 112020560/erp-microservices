@@ -2,11 +2,13 @@
 
 using System.Text.Json;
 using Crm.Application.Abstractions.Messaging;
+using Crm.Application.Abstractions.Mq;
 using Crm.Application.Customers.Dtos;
 using Crm.Domain.Abstractions.Persistence;
 using Crm.Domain.Customers;
 using Microsoft.Extensions.Logging;
 using SharedKernel;
+using SharedKernel.Contracts.Crm.Customers;
 
 namespace Crm.Application.Customers;
 
@@ -16,10 +18,12 @@ internal sealed class CreateCustomerCommandHandler : ICommandHandler<CreateCusto
 {
     private readonly ILogger<CreateCustomerCommandHandler> _logger;
     private readonly IUnitOfWork _unitOfWork;
-    public CreateCustomerCommandHandler(ILogger<CreateCustomerCommandHandler> logger, IUnitOfWork unitOfWork)
+    private readonly IMqProducerService _mqProducerService;
+    public CreateCustomerCommandHandler(ILogger<CreateCustomerCommandHandler> logger, IUnitOfWork unitOfWork, IMqProducerService mqProducerService)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
+        _mqProducerService = mqProducerService;
     }
     public async Task<Result<CustomerSummaryDto>> Handle(CreateCustomerCommand request, CancellationToken cancellationToken)
     {
@@ -27,6 +31,23 @@ internal sealed class CreateCustomerCommandHandler : ICommandHandler<CreateCusto
         var customer = MapToDto(dto);
         await _unitOfWork.CustomersRepository.AddCustomerAsync(customer, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var contract = new CreateCustomerContract
+        {
+            CustomerId = customer.Id,
+            FullName = customer.FullName,
+            DisplayName = customer.DisplayName ?? string.Empty,
+            IdentificationType = customer.IdentificationType,
+            IdentificationNumber = customer.IdentificationNumber ?? string.Empty,
+            TaxId = dto.TaxId,
+            Email = dto.Contacts?.FirstOrDefault(x => x.Type == "Email")?.Value,
+            Phone = dto.Contacts?.FirstOrDefault(x => x.Type == "Phone")?.Value,
+            CreatedAt = DateTimeOffset.UtcNow,
+            Version = 1,
+            Metadata = null
+        };
+
+        await _mqProducerService.SendCommand<CustomerCreated>(contract, "credit-service-customer-events", Guid.NewGuid().ToString("N"),cancellationToken);
 
         return new CustomerSummaryDto(customer.Id, customer.FullName, customer.DisplayName ?? string.Empty, customer.IdentificationNumber ?? string.Empty);
 

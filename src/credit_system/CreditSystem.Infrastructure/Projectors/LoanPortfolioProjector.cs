@@ -48,10 +48,35 @@ public class LoanPortfolioProjector : IProjection
                 await HandleStatusChange("delinquent_loans", -1, "defaulted_loans", 1, ct);
                 break;
 
-            case ContractPaidOff:
+            case ContractPaidOff e:
                 await HandleStatusChange("active_loans", -1, "paid_off_loans", 1, ct);
+                await HandleContractPaidOff(e, ct);
+                break;
+            
+            case ContractRestructured:
+                await HandleContractRestructured(ct);
                 break;
         }
+
+        await RecalculateRates(ct);
+    }
+    
+    private async Task HandleContractPaidOff(ContractPaidOff e, CancellationToken ct)
+    {
+        // Determinar de qué estado viene
+        const string sql = @"
+        UPDATE rm_loan_portfolio 
+        SET active_loans = GREATEST(0, active_loans - 1),
+            paid_off_loans = paid_off_loans + 1,
+            total_outstanding = total_outstanding - @PrincipalPaid,
+            updated_at = @Now
+        WHERE id = 'global'";
+
+        await _store.ExecuteAsync(sql, new
+        {
+            PrincipalPaid = e.TotalPrincipalPaid.Amount,
+            Now = DateTime.UtcNow
+        }, ct);
 
         await RecalculateRates(ct);
     }
@@ -66,6 +91,21 @@ public class LoanPortfolioProjector : IProjection
                 updated_at = @Now";
 
         await _store.ExecuteAsync(sql, new { Now = DateTime.UtcNow }, ct);
+    }
+    
+    private async Task HandleContractRestructured(CancellationToken ct)
+    {
+        // Mover de delinquent/default a active
+        const string sql = @"
+        UPDATE rm_loan_portfolio 
+        SET delinquent_loans = GREATEST(0, delinquent_loans - 1),
+            active_loans = active_loans + 1,
+            updated_at = @Now
+        WHERE id = 'global'";
+
+        await _store.ExecuteAsync(sql, new { Now = DateTime.UtcNow }, ct);
+    
+        await RecalculateRates(ct);
     }
 
     private async Task IncrementAmount(string column, decimal amount, CancellationToken ct)

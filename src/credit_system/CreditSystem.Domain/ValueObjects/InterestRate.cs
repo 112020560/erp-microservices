@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using CreditSystem.Domain.Exceptions;
 
 namespace CreditSystem.Domain.ValueObjects;
@@ -5,6 +6,13 @@ namespace CreditSystem.Domain.ValueObjects;
 public record InterestRate
 {
     public decimal AnnualRate { get; }
+
+    [JsonConstructor]
+    public InterestRate()
+    {
+        AnnualRate = 0;
+    }
+
     
     public InterestRate(decimal annualRate)
     {

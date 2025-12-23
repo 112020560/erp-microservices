@@ -1,3 +1,4 @@
+using CreditSystem.Domain.Abstractions.EventStore;
 using CreditSystem.Domain.Aggregates.LoanContract.Events.Base;
 using CreditSystem.Infrastructure.EventStore.Models;
 using Microsoft.Extensions.Logging;
@@ -34,8 +35,8 @@ public class PostgresEventStore : IEventStore
         CancellationToken ct = default)
     {
         const string sql = @"
-            SELECT id, stream_id, event_type, event_data, metadata, version, 
-                   hash, previous_hash, occurred_at, stored_at
+            SELECT id as Id, stream_id as StreamId, event_type as EventType, event_data as EventData, metadata as Metadata, version as Version, 
+                   hash as Hash, previous_hash as PreviousHash, occurred_at as OccurredAt, stored_at as StoredAt
             FROM stored_events
             WHERE stream_id = @StreamId AND version >= @FromVersion
             ORDER BY version ASC";

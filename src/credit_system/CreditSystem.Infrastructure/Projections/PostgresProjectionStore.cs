@@ -5,6 +5,8 @@ namespace CreditSystem.Infrastructure.Projections;
 // Infrastructure/Projections/PostgresProjectionStore.cs
 using Npgsql;
 using Dapper;
+using System.Reflection;
+using System.Text.Json.Serialization;
 
 public class PostgresProjectionStore : IProjectionStore
 {
@@ -59,7 +61,9 @@ public class PostgresProjectionStore : IProjectionStore
         CancellationToken ct = default)
     {
         var properties = typeof(T).GetProperties()
-            .Where(p => p.CanRead && p.GetValue(model) != null)
+            .Where(p => p.CanRead
+            && p.GetValue(model) != null
+            && p.GetCustomAttribute<JsonIgnoreAttribute>() == null)
             .ToList();
 
         var columns = properties.Select(p => ToSnakeCase(p.Name)).ToList();

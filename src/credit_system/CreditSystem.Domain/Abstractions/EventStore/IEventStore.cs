@@ -1,6 +1,6 @@
 using CreditSystem.Domain.Aggregates.LoanContract.Events.Base;
 
-namespace CreditSystem.Infrastructure.EventStore;
+namespace CreditSystem.Domain.Abstractions.EventStore;
 
 public interface IEventStore
 {

@@ -1,9 +1,18 @@
+using CreditSystem.Api.EndPoints.Dtos;
 using CreditSystem.Application.Commands.ApplyPayment;
 using CreditSystem.Application.Commands.CreateContract;
+using CreditSystem.Application.Commands.DefaultContract;
 using CreditSystem.Application.Commands.DisburseLoan;
+using CreditSystem.Application.Commands.PayoffContract;
+using CreditSystem.Application.Commands.RestructureContract;
 using CreditSystem.Application.Queries;
+using CreditSystem.Application.Queries.GetDefaultedLoans;
+using CreditSystem.Application.Queries.GetDelinquentLoans;
 using CreditSystem.Application.Queries.GetLoanSummary;
+using CreditSystem.Application.Queries.GetPaidOffLoans;
 using CreditSystem.Application.Queries.GetPaymentHistory;
+using CreditSystem.Application.Queries.GetPayoffAmount;
+using CreditSystem.Application.Queries.GetRestructureHistory;
 using CreditSystem.Domain.Abstractions.Services;
 using FluentValidation;
 using MediatR;
@@ -26,8 +35,8 @@ public static class LoanContractEndpoints
             .Produces<CreateContractResponse>(StatusCodes.Status201Created)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
-        
-        
+
+
         // POST /api/loans/{id}/disburse - Desembolsar
         group.MapPost("/{id:guid}/disburse", DisburseLoan)
             .WithName("DisburseLoan")
@@ -48,8 +57,8 @@ public static class LoanContractEndpoints
             .WithName("GetCustomerLoans")
             .WithSummary("Get all loans for a customer")
             .Produces<IReadOnlyList<LoanSummaryResponse>>(StatusCodes.Status200OK);
-        
-        
+
+
         // POST /api/loans/{id}/payments - Aplicar pago
         group.MapPost("/{id:guid}/payments", ApplyPayment)
             .WithName("ApplyPayment")
@@ -64,8 +73,78 @@ public static class LoanContractEndpoints
             .WithSummary("Get payment history for a loan")
             .Produces<IReadOnlyList<PaymentHistoryResponse>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
+
+        // POST /api/loans/{id}/default - Marcar como default
+        group.MapPost("/{id:guid}/default", DefaultContract)
+            .WithName("DefaultContract")
+            .WithSummary("Mark a loan as defaulted")
+            .Produces<DefaultContractResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+
+        // GET /api/loans/defaulted - Listar préstamos en default
+        group.MapGet("/defaulted", GetDefaultedLoans)
+            .WithName("GetDefaultedLoans")
+            .WithSummary("Get all defaulted loans")
+            .Produces<IReadOnlyList<DefaultedLoanResponse>>(StatusCodes.Status200OK);
+
+
+        // POST /api/loans/{id}/restructure - Reestructurar préstamo
+        group.MapPost("/{id:guid}/restructure", RestructureContract)
+            .WithName("RestructureContract")
+            .WithSummary("Restructure a delinquent or defaulted loan")
+            .Produces<RestructureContractResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+
+        // GET /api/loans/{id}/restructure-history - Historial de reestructuraciones
+        group.MapGet("/{id:guid}/restructure-history", GetRestructureHistory)
+            .WithName("GetRestructureHistory")
+            .WithSummary("Get restructure history for a loan")
+            .Produces<IReadOnlyList<RestructureHistoryResponse>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+
+        // GET /api/loans/{id}/payoff-amount - Obtener monto de payoff
+        group.MapGet("/{id:guid}/payoff-amount", GetPayoffAmount)
+            .WithName("GetPayoffAmount")
+            .WithSummary("Get the payoff amount for a loan")
+            .Produces<PayoffAmountResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+
+        // POST /api/loans/{id}/payoff - Pagar préstamo completo
+        group.MapPost("/{id:guid}/payoff", PayoffContract)
+            .WithName("PayoffContract")
+            .WithSummary("Pay off a loan completely")
+            .Produces<PayoffContractResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+
+        // GET /api/loans/paid-off - Listar préstamos pagados
+        group.MapGet("/paid-off", GetPaidOffLoans)
+            .WithName("GetPaidOffLoans")
+            .WithSummary("Get all paid off loans")
+            .Produces<IReadOnlyList<PaidOffLoanResponse>>(StatusCodes.Status200OK);
     }
 
+    public static void MapDelinquentLoansEndpoints(this IEndpointRouteBuilder app)
+    {
+        var group = app.MapGroup("/api/delinquent-loans")
+            .WithTags("Delinquent Loans")
+            .WithOpenApi();
+
+        // GET /api/delinquent-loans - Listar préstamos morosos
+        group.MapGet("/", GetDelinquentLoans)
+            .WithName("GetDelinquentLoans")
+            .WithSummary("Get all delinquent loans")
+            .Produces<IReadOnlyList<DelinquentLoanResponse>>(StatusCodes.Status200OK);
+
+        // GET /api/delinquent-loans/{id} - Detalle de préstamo moroso
+        group.MapGet("/{id:guid}", GetDelinquentLoanDetail)
+            .WithName("GetDelinquentLoanDetail")
+            .WithSummary("Get delinquent loan details")
+            .Produces<DelinquentLoanResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+    }
     private static async Task<IResult> CreateContract(
         [FromBody] CreateContractCommand command,
         [FromServices] IMediator mediator,
@@ -99,7 +178,7 @@ public static class LoanContractEndpoints
             });
         }
     }
-    
+
     private static async Task<IResult> DisburseLoan(
         Guid id,
         [FromBody] DisburseLoanRequest request,
@@ -150,8 +229,8 @@ public static class LoanContractEndpoints
         var query = new GetLoanSummaryQuery { LoanId = id };
         var response = await mediator.Send(query, cancellationToken);
 
-        return response == null 
-            ? Results.NotFound() 
+        return response == null
+            ? Results.NotFound()
             : Results.Ok(response);
     }
 
@@ -163,7 +242,7 @@ public static class LoanContractEndpoints
         CancellationToken cancellationToken)
     {
         var customer = await customerService.GetByExternalIdAsync(externalCustomerId, cancellationToken);
-        
+
         if (customer == null)
             return Results.NotFound();
 
@@ -172,7 +251,7 @@ public static class LoanContractEndpoints
 
         return Results.Ok(response);
     }
-    
+
     private static async Task<IResult> ApplyPayment(
         Guid id,
         [FromBody] ApplyPaymentRequest request,
@@ -225,7 +304,7 @@ public static class LoanContractEndpoints
     {
         // Verificar que el préstamo existe
         var loan = await queryService.GetLoanSummaryAsync(id, cancellationToken);
-    
+
         if (loan == null)
             return Results.NotFound();
 
@@ -234,18 +313,231 @@ public static class LoanContractEndpoints
 
         return Results.Ok(response);
     }
-}
 
-public record DisburseLoanRequest
-{
-    public string DisbursementMethod { get; init; } = null!;
-    public string DestinationAccount { get; init; } = null!;
-}
+    private static async Task<IResult> GetDelinquentLoans(
+        [FromQuery] int? minDaysOverdue,
+        [FromQuery] string? collectionStatus,
+        [FromServices] IMediator mediator,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetDelinquentLoansQuery
+        {
+            MinDaysOverdue = minDaysOverdue,
+            CollectionStatus = collectionStatus
+        };
 
-public record ApplyPaymentRequest
-{
-    public decimal Amount { get; init; }
-    public string? Currency { get; init; }
-    public string PaymentMethod { get; init; } = null!;
-    public string? ReferenceNumber { get; init; }
+        var response = await mediator.Send(query, cancellationToken);
+        return Results.Ok(response);
+    }
+
+    private static async Task<IResult> GetDelinquentLoanDetail(
+        Guid id,
+        [FromServices] ILoanQueryService queryService,
+        CancellationToken cancellationToken)
+    {
+        var loans = await queryService.GetDelinquentLoansAsync(ct: cancellationToken);
+        var loan = loans.FirstOrDefault(l => l.LoanId == id);
+
+        return loan == null
+            ? Results.NotFound()
+            : Results.Ok(DelinquentLoanResponse.FromReadModel(loan));
+    }
+
+    private static async Task<IResult> DefaultContract(
+        Guid id,
+        [FromBody] DefaultContractRequest request,
+        [FromServices] IMediator mediator,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var command = new DefaultContractCommand
+            {
+                LoanId = id,
+                Reason = request.Reason
+            };
+
+            var response = await mediator.Send(command, cancellationToken);
+
+            if (!response.Success)
+            {
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Default Failed",
+                    Detail = response.Message,
+                    Status = StatusCodes.Status400BadRequest,
+                    Extensions = { ["errors"] = response.Errors }
+                });
+            }
+
+            return Results.Ok(response);
+        }
+        catch (ValidationException ex)
+        {
+            return Results.BadRequest(new ProblemDetails
+            {
+                Title = "Validation Failed",
+                Detail = "One or more validation errors occurred",
+                Status = StatusCodes.Status400BadRequest,
+                Extensions = { ["errors"] = ex.Errors.Select(e => e.ErrorMessage).ToList() }
+            });
+        }
+    }
+
+    private static async Task<IResult> GetDefaultedLoans(
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        [FromServices] IMediator mediator,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetDefaultedLoansQuery
+        {
+            FromDate = fromDate,
+            ToDate = toDate
+        };
+
+        var response = await mediator.Send(query, cancellationToken);
+        return Results.Ok(response);
+    }
+
+    private static async Task<IResult> RestructureContract(
+        Guid id,
+        [FromBody] RestructureContractRequest request,
+        [FromServices] IMediator mediator,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var command = new RestructureContractCommand
+            {
+                LoanId = id,
+                NewInterestRate = request.NewInterestRate,
+                NewTermMonths = request.NewTermMonths,
+                ForgiveAmount = request.ForgiveAmount,
+                Reason = request.Reason
+            };
+
+            var response = await mediator.Send(command, cancellationToken);
+
+            if (!response.Success)
+            {
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Restructure Failed",
+                    Detail = response.Message,
+                    Status = StatusCodes.Status400BadRequest,
+                    Extensions = { ["errors"] = response.Errors }
+                });
+            }
+
+            return Results.Ok(response);
+        }
+        catch (ValidationException ex)
+        {
+            return Results.BadRequest(new ProblemDetails
+            {
+                Title = "Validation Failed",
+                Detail = "One or more validation errors occurred",
+                Status = StatusCodes.Status400BadRequest,
+                Extensions = { ["errors"] = ex.Errors.Select(e => e.ErrorMessage).ToList() }
+            });
+        }
+    }
+
+    private static async Task<IResult> GetRestructureHistory(
+        Guid id,
+        [FromServices] IMediator mediator,
+        [FromServices] ILoanQueryService queryService,
+        CancellationToken cancellationToken)
+    {
+        // Verificar que el préstamo existe
+        var loan = await queryService.GetLoanSummaryAsync(id, cancellationToken);
+
+        if (loan == null)
+            return Results.NotFound();
+
+        var query = new GetRestructureHistoryQuery { LoanId = id };
+        var response = await mediator.Send(query, cancellationToken);
+
+        return Results.Ok(response);
+    }
+
+    private static async Task<IResult> GetPayoffAmount(
+    Guid id,
+    [FromQuery] DateTime? asOfDate,
+    [FromServices] IMediator mediator,
+    CancellationToken cancellationToken)
+    {
+        var query = new GetPayoffAmountQuery
+        {
+            LoanId = id,
+            AsOfDate = asOfDate
+        };
+
+        var response = await mediator.Send(query, cancellationToken);
+
+        return response == null
+            ? Results.NotFound()
+            : Results.Ok(response);
+    }
+
+    private static async Task<IResult> PayoffContract(
+        Guid id,
+        [FromBody] PayoffContractRequest request,
+        [FromServices] IMediator mediator,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var command = new PayoffContractCommand
+            {
+                LoanId = id,
+                PaymentMethod = request.PaymentMethod,
+                ReferenceNumber = request.ReferenceNumber
+            };
+
+            var response = await mediator.Send(command, cancellationToken);
+
+            if (!response.Success)
+            {
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Payoff Failed",
+                    Detail = response.Message,
+                    Status = StatusCodes.Status400BadRequest,
+                    Extensions = { ["errors"] = response.Errors }
+                });
+            }
+
+            return Results.Ok(response);
+        }
+        catch (ValidationException ex)
+        {
+            return Results.BadRequest(new ProblemDetails
+            {
+                Title = "Validation Failed",
+                Detail = "One or more validation errors occurred",
+                Status = StatusCodes.Status400BadRequest,
+                Extensions = { ["errors"] = ex.Errors.Select(e => e.ErrorMessage).ToList() }
+            });
+        }
+    }
+
+    private static async Task<IResult> GetPaidOffLoans(
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        [FromQuery] bool? earlyPayoffOnly,
+        [FromServices] IMediator mediator,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetPaidOffLoansQuery
+        {
+            FromDate = fromDate,
+            ToDate = toDate,
+            EarlyPayoffOnly = earlyPayoffOnly
+        };
+
+        var response = await mediator.Send(query, cancellationToken);
+        return Results.Ok(response);
+    }
 }

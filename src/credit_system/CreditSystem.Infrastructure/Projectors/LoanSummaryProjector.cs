@@ -175,32 +175,36 @@ public class LoanSummaryProjector : IProjection
     private async Task HandleContractDefaulted(ContractDefaulted e, CancellationToken ct)
     {
         const string sql = @"
-            UPDATE rm_loan_summaries 
-            SET status = 'Default',
-                defaulted_at = @Now,
-                version = @Version,
-                updated_at = @Now
-            WHERE loan_id = @LoanId";
+        UPDATE rm_loan_summaries 
+        SET status = 'Default',
+            defaulted_at = @DefaultedAt,
+            version = @Version,
+            updated_at = @Now
+        WHERE loan_id = @LoanId";
 
         await _store.ExecuteAsync(sql, new
         {
             LoanId = e.AggregateId,
+            DefaultedAt = DateTime.UtcNow,
             Version = e.Version,
             Now = DateTime.UtcNow
         }, ct);
+
+        _logger.LogDebug("Projected ContractDefaulted for loan {LoanId}", e.AggregateId);
     }
 
     private async Task HandleContractPaidOff(ContractPaidOff e, CancellationToken ct)
     {
         const string sql = @"
-            UPDATE rm_loan_summaries 
-            SET status = 'PaidOff',
-                current_balance = 0,
-                accrued_interest = 0,
-                paid_off_at = @PaidOffAt,
-                version = @Version,
-                updated_at = @Now
-            WHERE loan_id = @LoanId";
+        UPDATE rm_loan_summaries 
+        SET status = 'PaidOff',
+            current_balance = 0,
+            accrued_interest = 0,
+            total_fees = 0,
+            paid_off_at = @PaidOffAt,
+            version = @Version,
+            updated_at = @Now
+        WHERE loan_id = @LoanId";
 
         await _store.ExecuteAsync(sql, new
         {
@@ -209,6 +213,8 @@ public class LoanSummaryProjector : IProjection
             Version = e.Version,
             Now = DateTime.UtcNow
         }, ct);
+
+        _logger.LogDebug("Projected ContractPaidOff for loan {LoanId}", e.AggregateId);
     }
 
     private async Task HandleContractRestructured(ContractRestructured e, CancellationToken ct)
@@ -216,27 +222,31 @@ public class LoanSummaryProjector : IProjection
         var firstPayment = e.NewSchedule.Entries.FirstOrDefault();
 
         const string sql = @"
-            UPDATE rm_loan_summaries 
-            SET status = 'Restructured',
-                interest_rate = @NewRate,
-                term_months = @NewTerm,
-                payments_missed = 0,
-                next_payment_date = @NextPaymentDate,
-                next_payment_amount = @NextPaymentAmount,
-                version = @Version,
-                updated_at = @Now
-            WHERE loan_id = @LoanId";
+        UPDATE rm_loan_summaries 
+        SET status = 'Active',
+            interest_rate = @NewRate,
+            term_months = @NewTermMonths,
+            current_balance = current_balance - @ForgiveAmount,
+            payments_missed = 0,
+            next_payment_date = @NextPaymentDate,
+            next_payment_amount = @NextPaymentAmount,
+            version = @Version,
+            updated_at = @Now
+        WHERE loan_id = @LoanId";
 
         await _store.ExecuteAsync(sql, new
         {
             LoanId = e.AggregateId,
             NewRate = e.NewRate.AnnualRate,
-            NewTerm = e.NewTermMonths,
+            NewTermMonths = e.NewTermMonths,
+            ForgiveAmount = e.ForgiveAmount.Amount,
             NextPaymentDate = firstPayment?.DueDate,
             NextPaymentAmount = firstPayment?.TotalPayment.Amount,
             Version = e.Version,
             Now = DateTime.UtcNow
         }, ct);
+
+        _logger.LogDebug("Projected ContractRestructured for loan {LoanId}", e.AggregateId);
     }
 
     public async Task RebuildAsync(IAsyncEnumerable<IDomainEvent> events, CancellationToken ct = default)

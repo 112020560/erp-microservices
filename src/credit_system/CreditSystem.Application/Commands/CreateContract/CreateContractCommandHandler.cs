@@ -98,11 +98,14 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
             }
         );
 
+        // Guardar eventos ANTES de persistir
+        var events = aggregate.UncommittedEvents.ToList();
+
         // 4. Persistir eventos
         await _repository.SaveAsync(aggregate, cancellationToken);
 
         // 5. Proyectar eventos a Read Models
-        foreach (var @event in aggregate.UncommittedEvents)
+        foreach (var @event in events)
         {
             await _projectionEngine.ProjectEventAsync(@event, cancellationToken);
         }

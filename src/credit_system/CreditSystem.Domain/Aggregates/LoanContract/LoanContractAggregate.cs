@@ -42,6 +42,8 @@ public class LoanContractAggregate
         var aggregate = new LoanContractAggregate();
         var id = Guid.NewGuid();
         var schedule = PaymentSchedule.Calculate(principal, rate, termMonths, DateTime.UtcNow);
+        
+        aggregate.Id = id;  // <-- AGREGAR ESTA LÍNEA
 
         aggregate.Apply(new ContractCreated
         {
@@ -162,19 +164,27 @@ public class LoanContractAggregate
     public void RecordMissedPayment(int paymentNumber, DateTime dueDate, Money lateFee)
     {
         EnsureStatus(ContractStatus.Active, ContractStatus.Delinquent);
+        
+        if (State.Status != ContractStatus.Active && State.Status != ContractStatus.Delinquent)
+            throw new DomainException($"Cannot record missed payment: loan status is {State.Status}");
+
+        // Verificar que no se haya registrado ya este pago perdido
+        if (paymentNumber <= State.PaymentsMissed + State.PaymentsMade)
+            throw new DomainException($"Payment {paymentNumber} already processed");
 
         var scheduledPayment = State.Schedule.Entries
             .FirstOrDefault(e => e.PaymentNumber == paymentNumber)
             ?? throw new DomainException($"Payment {paymentNumber} not found in schedule");
 
-        var daysOverdue = (DateTime.UtcNow - dueDate).Days;
+        var amountDue = scheduledPayment?.TotalPayment ?? Money.Zero(State.Principal.Currency);
+        var daysOverdue = (int)(DateTime.UtcNow.Date - dueDate.Date).TotalDays;
 
         Apply(new PaymentMissed
         {
             AggregateId = Id,
             PaymentNumber = paymentNumber,
             DueDate = dueDate,
-            AmountDue = scheduledPayment.TotalPayment,
+            AmountDue = amountDue,
             DaysOverdue = daysOverdue,
             LateFeeApplied = lateFee
         }, isNew: true);
@@ -195,11 +205,20 @@ public class LoanContractAggregate
         {
             AggregateId = Id,
             Reason = reason,
-            DaysDelinquent = State.PaymentsMissed * 30, // Aproximado
+            DaysDelinquent = CalculateDaysDelinquent(), // Aproximado
             OutstandingBalance = State.CurrentBalance,
             AccruedInterest = State.AccruedInterest,
             TotalOwed = State.TotalOwed
         }, isNew: true);
+    }
+    
+    private int CalculateDaysDelinquent()
+    {
+        if (State.NextPaymentDue == null)
+            return 0;
+    
+        var days = (int)(DateTime.UtcNow.Date - State.NextPaymentDue.Value.Date).TotalDays;
+        return Math.Max(0, days);
     }
 
     public void Restructure(InterestRate newRate, int newTermMonths, Money forgiveAmount, string reason)
@@ -208,6 +227,10 @@ public class LoanContractAggregate
             throw new DomainException("Can only restructure delinquent or defaulted contracts");
 
         var newPrincipal = State.CurrentBalance - forgiveAmount;
+        if (newPrincipal.Amount <= 0)
+        {
+            throw new DomainException("New balance after forgiveness must be greater than zero");
+        }
         var newSchedule = PaymentSchedule.Calculate(newPrincipal, newRate, newTermMonths, DateTime.UtcNow);
 
         Apply(new ContractRestructured
@@ -227,6 +250,11 @@ public class LoanContractAggregate
 
     private void Apply(IDomainEvent @event, bool isNew)
     {
+        if (Id == Guid.Empty)
+        {
+            Id = @event.AggregateId;
+        }
+        
         State = ApplyEvent(State, @event);
         
         if (isNew)
@@ -257,7 +285,7 @@ public class LoanContractAggregate
                 TermMonths = e.TermMonths,
                 Schedule = e.Schedule,
                 Status = ContractStatus.Approved,
-                NextPaymentDue = e.Schedule.Entries.First().DueDate,
+                NextPaymentDue = e.Schedule.Entries.FirstOrDefault()?.DueDate,
                 Version = state.Version + 1
             },
 
@@ -311,8 +339,9 @@ public class LoanContractAggregate
                 TermMonths = e.NewTermMonths,
                 Schedule = e.NewSchedule,
                 CurrentBalance = state.CurrentBalance - e.ForgiveAmount,
-                Status = ContractStatus.Restructured,
-                PaymentsMissed = 0,
+                Status = ContractStatus.Active, // Vuelve a activo después de reestructurar
+                PaymentsMissed = 0, // Reset de pagos perdidos
+                NextPaymentDue = e.NewSchedule.Entries.FirstOrDefault()?.DueDate,
                 Version = state.Version + 1
             },
 

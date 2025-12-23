@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using CreditSystem.Domain.Abstractions.EventStore;
 using CreditSystem.Domain.Abstractions.Projections;
 using CreditSystem.Domain.Aggregates.LoanContract.Events.Base;
 using CreditSystem.Infrastructure.EventStore;

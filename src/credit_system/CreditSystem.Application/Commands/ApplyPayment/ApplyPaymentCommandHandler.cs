@@ -70,11 +70,14 @@ public class ApplyPaymentCommandHandler : IRequestHandler<ApplyPaymentCommand, A
             return ApplyPaymentResponse.Failed("Payment event not generated");
         }
 
+        // Guardar eventos ANTES de persistir
+        var events = aggregate.UncommittedEvents.ToList();
+
         // 5. Persistir eventos
         await _repository.SaveAsync(aggregate, cancellationToken);
 
         // 6. Proyectar eventos
-        foreach (var @event in aggregate.UncommittedEvents)
+        foreach (var @event in events)
         {
             await _projectionEngine.ProjectEventAsync(@event, cancellationToken);
         }

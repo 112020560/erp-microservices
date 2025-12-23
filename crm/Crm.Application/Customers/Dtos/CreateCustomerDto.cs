@@ -6,6 +6,7 @@ public record CreateCustomerDto
     string IdentificationNumber,
     string FullName,
     string? DisplayName,
+    string? TaxId,
     DateOnly? BirthDate,
     IEnumerable<AddressDto>? Addresses,
     IEnumerable<ContactDto>? Contacts,

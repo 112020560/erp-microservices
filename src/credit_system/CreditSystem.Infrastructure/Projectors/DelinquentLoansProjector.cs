@@ -54,27 +54,56 @@ public class DelinquentLoansProjector : IProjection
         if (loan == null) return;
 
         var customer = await _customerService.GetByIdAsync(loan.CustomerId, ct);
+        
+        // Verificar si ya existe en delinquent
+        var existing = await _store.GetByIdAsync<DelinquentLoanReadModel>(
+            "rm_delinquent_loans", "loan_id", e.AggregateId, ct);
 
-        var model = new DelinquentLoanReadModel
+        if (existing != null)
         {
-            LoanId = e.AggregateId,
-            CustomerId = loan.CustomerId,
-            CustomerName = customer?.FullName,
-            CustomerPhone = customer?.Phone,
-            CustomerEmail = customer?.Email,
-            Principal = loan.Principal,
-            CurrentBalance = loan.CurrentBalance,
-            TotalOwed = loan.TotalOwed,
-            DaysOverdue = e.DaysOverdue,
-            PaymentsMissed = loan.PaymentsMissed + 1,
-            LastPaymentAt = loan.LastPaymentAt,
-            NextActionDate = DateTime.UtcNow.AddDays(3).Date,
-            CollectionStatus = "pending_contact",
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+            // Actualizar existente
+            const string updateSql = @"
+            UPDATE rm_delinquent_loans 
+            SET days_overdue = @DaysOverdue,
+                payments_missed = @PaymentsMissed,
+                total_owed = @TotalOwed,
+                updated_at = @Now
+            WHERE loan_id = @LoanId";
 
-        await _store.UpsertAsync("rm_delinquent_loans", model, "loan_id", ct);
+            await _store.ExecuteAsync(updateSql, new
+            {
+                LoanId = e.AggregateId,
+                DaysOverdue = e.DaysOverdue,
+                PaymentsMissed = loan.PaymentsMissed + 1,
+                TotalOwed = loan.TotalOwed + e.LateFeeApplied.Amount,
+                Now = DateTime.UtcNow
+            }, ct);
+        }
+        else
+        {
+            var model = new DelinquentLoanReadModel
+            {
+                LoanId = e.AggregateId,
+                CustomerId = loan.CustomerId,
+                CustomerName = customer?.FullName,
+                CustomerPhone = customer?.Phone,
+                CustomerEmail = customer?.Email,
+                Principal = loan.Principal,
+                CurrentBalance = loan.CurrentBalance,
+                TotalOwed = loan.TotalOwed,
+                DaysOverdue = e.DaysOverdue,
+                PaymentsMissed = loan.PaymentsMissed + 1,
+                LastPaymentAt = loan.LastPaymentAt,
+                NextActionDate = DateTime.UtcNow.AddDays(3).Date,
+                CollectionStatus = "pending_contact",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await _store.UpsertAsync("rm_delinquent_loans", model, "loan_id", ct);
+        }
+        
+        _logger.LogDebug("Projected PaymentMissed for loan {LoanId}", e.AggregateId);
     }
 
     private async Task HandlePaymentApplied(PaymentApplied e, CancellationToken ct)
@@ -112,21 +141,26 @@ public class DelinquentLoansProjector : IProjection
     private async Task HandleContractDefaulted(ContractDefaulted e, CancellationToken ct)
     {
         const string sql = @"
-            UPDATE rm_delinquent_loans 
-            SET collection_status = 'defaulted',
-                updated_at = @Now
-            WHERE loan_id = @LoanId";
+        UPDATE rm_delinquent_loans 
+        SET collection_status = 'defaulted',
+            updated_at = @Now
+        WHERE loan_id = @LoanId";
 
         await _store.ExecuteAsync(sql, new
         {
             LoanId = e.AggregateId,
             Now = DateTime.UtcNow
         }, ct);
+
+        _logger.LogDebug("Updated delinquent status to defaulted for loan {LoanId}", e.AggregateId);
     }
 
     private async Task HandleContractPaidOff(ContractPaidOff e, CancellationToken ct)
     {
+        // Remover de lista de morosos si estaba ahí
         await _store.DeleteAsync("rm_delinquent_loans", "loan_id", e.AggregateId, ct);
+
+        _logger.LogDebug("Removed loan {LoanId} from delinquent list after payoff", e.AggregateId);
     }
 
     public async Task RebuildAsync(IAsyncEnumerable<IDomainEvent> events, CancellationToken ct = default)
@@ -137,5 +171,13 @@ public class DelinquentLoansProjector : IProjection
         {
             await ProjectAsync(@event, ct);
         }
+    }
+    
+    private async Task HandleContractRestructured(ContractRestructured e, CancellationToken ct)
+    {
+        // Remover de la lista de morosos ya que vuelve a estar activo
+        await _store.DeleteAsync("rm_delinquent_loans", "loan_id", e.AggregateId, ct);
+
+        _logger.LogDebug("Removed loan {LoanId} from delinquent list after restructure", e.AggregateId);
     }
 }

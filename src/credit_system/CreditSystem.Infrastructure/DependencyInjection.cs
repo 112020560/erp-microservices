@@ -1,4 +1,5 @@
 ﻿using CreditSystem.Domain.Abstractions;
+using CreditSystem.Domain.Abstractions.EventStore;
 using CreditSystem.Domain.Abstractions.Projections;
 using CreditSystem.Domain.Abstractions.Services;
 using CreditSystem.Infrastructure.EventStore;
@@ -31,7 +32,7 @@ public static class DependencyInjection
         services.AddSingleton<IHashGenerator, Sha256HashGenerator>();
         services.AddScoped<IEventStore>(sp => 
             new PostgresEventStore(
-                configuration.GetConnectionString("EventStore")!,
+                configuration.GetConnectionString("CreditDb")!, //EventStore
                 sp.GetRequiredService<IEventSerializer>(),
                 sp.GetRequiredService<IHashGenerator>(),
                 sp.GetRequiredService<ILogger<PostgresEventStore>>()));
@@ -45,7 +46,7 @@ public static class DependencyInjection
     {
         services.AddSingleton<IProjectionStore>(sp =>
             new PostgresProjectionStore(
-                configuration.GetConnectionString("ReadDb")!,
+                configuration.GetConnectionString("CreditDb")!, //readdb
                 sp.GetRequiredService<ILogger<PostgresProjectionStore>>()));
         
         services.AddScoped<IProjection, LoanSummaryProjector>();
@@ -68,6 +69,7 @@ public static class DependencyInjection
     private static IServiceCollection AddWorkerConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHostedService<InterestAccrualWorker>();
+        services.AddHostedService<PaymentMissedWorker>();
         return services;
     }
 
@@ -83,7 +85,7 @@ public static class DependencyInjection
 
             x.UsingRabbitMq((context, cfg) =>
             {
-                cfg.Host(configuration["RabbitMQ:Host"]);
+                cfg.Host(configuration["RabbitMqSettings:Uri"]);
 
                 cfg.ReceiveEndpoint("credit-service-customer-events", e =>
                 {

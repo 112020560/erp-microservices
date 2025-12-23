@@ -72,11 +72,11 @@ public class InterestAccrualJob : IInterestAccrualJob
         var periodStart = aggregate.State.LastInterestAccrualDate?.Date ?? aggregate.State.DisbursedAt?.Date ?? periodEnd.AddDays(-1);
 
         // No acumular si ya se calculó hoy
-        if (periodStart >= periodEnd)
-        {
-            _logger.LogDebug("Interest already accrued for loan {LoanId} today", loanId);
-            return;
-        }
+        //if (periodStart >= periodEnd)
+        //{
+        //    _logger.LogDebug("Interest already accrued for loan {LoanId} today", loanId);
+        //    return;
+        //}
 
         // 3. Ejecutar acumulación
         try
