@@ -5,7 +5,7 @@ namespace CreditSystem.Domain.ValueObjects;
 
 public record InterestRate
 {
-    public decimal AnnualRate { get; }
+    public decimal AnnualRate { get; init; }
 
     [JsonConstructor]
     public InterestRate()

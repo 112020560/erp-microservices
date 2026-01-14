@@ -3,6 +3,7 @@ using CreditSystem.Domain.Abstractions.Projections;
 using CreditSystem.Domain.Abstractions.Services;
 using CreditSystem.Domain.Aggregates.LoanContract;
 using CreditSystem.Domain.Rules;
+using CreditSystem.Domain.Services.Amortization;
 using CreditSystem.Domain.ValueObjects;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -15,6 +16,7 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
     private readonly ICustomerService _customerService;
     private readonly ILoanQueryService _queryService;
     private readonly ContractEngine _contractEngine;
+    private readonly IAmortizationCalculatorFactory _calculatorFactory;
     private readonly IProjectionEngine _projectionEngine;
     private readonly ILogger<CreateContractCommandHandler> _logger;
 
@@ -23,6 +25,7 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
         ICustomerService customerService,
         ILoanQueryService queryService,
         ContractEngine contractEngine,
+        IAmortizationCalculatorFactory calculatorFactory,
         IProjectionEngine projectionEngine,
         ILogger<CreateContractCommandHandler> logger)
     {
@@ -30,6 +33,7 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
         _customerService = customerService;
         _queryService = queryService;
         _contractEngine = contractEngine;
+        _calculatorFactory = calculatorFactory;
         _projectionEngine = projectionEngine;
         _logger = logger;
     }
@@ -81,6 +85,8 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
             return CreateContractResponse.Rejected(evaluation.Results);
         }
 
+        var calculator = _calculatorFactory.GetCalculator(request.AmortizationMethod);
+
         // 3. Crear el Aggregate
         var principal = new Money(request.Amount, request.Currency);
         var interestRate = new InterestRate(evaluation.InterestRate);
@@ -90,6 +96,8 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
             principal: principal,
             rate: interestRate,
             termMonths: request.TermMonths,
+            amortizationMethod: request.AmortizationMethod,
+            calculator: calculator,
             evaluationMetadata: new Dictionary<string, object>
             {
                 ["ExternalCustomerId"] = request.ExternalCustomerId,

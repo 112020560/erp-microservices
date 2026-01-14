@@ -12,7 +12,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services, IConfiguration configuration)
         => services.AddMediatRConfiguration()
-                    .AddJobsConfiguration();
+                    .AddJobsConfiguration()
+                    .AddConfigurationService(configuration);
     
 
     private static IServiceCollection AddMediatRConfiguration(this IServiceCollection services)

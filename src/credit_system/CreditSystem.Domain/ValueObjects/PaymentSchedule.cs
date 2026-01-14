@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using CreditSystem.Domain.Enums;
 
 namespace CreditSystem.Domain.ValueObjects;
 
@@ -7,6 +8,7 @@ public record PaymentSchedule
     public IReadOnlyList<AmortizationEntry> Entries { get; }
     public Money TotalInterest { get; }
     public Money TotalPayment { get; }
+    public AmortizationMethod Method { get; init; }
 
     // Constructor sin parámetros para deserialización
     [JsonConstructor]
@@ -15,13 +17,15 @@ public record PaymentSchedule
         Entries = Array.Empty<AmortizationEntry>();
         TotalInterest = Money.Zero();
         TotalPayment = Money.Zero();
+        Method = AmortizationMethod.French;
     }
 
-    public PaymentSchedule(IEnumerable<AmortizationEntry> entries)
+    public PaymentSchedule(IEnumerable<AmortizationEntry> entries, AmortizationMethod method = AmortizationMethod.French)
     {
         Entries = entries.ToList().AsReadOnly();
         TotalInterest = new Money(Entries.Sum(e => e.Interest.Amount));
         TotalPayment = new Money(Entries.Sum(e => e.TotalPayment.Amount));
+        Method = method;
     }
 
     public AmortizationEntry? GetCurrentPayment(DateTime asOf)

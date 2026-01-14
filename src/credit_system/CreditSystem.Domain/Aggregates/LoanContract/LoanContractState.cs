@@ -24,6 +24,7 @@ public record LoanContractState
     public DateTime? PaidOffAt { get; init; }
     public int Version { get; init; }
     public DateTime? LastInterestAccrualDate { get; init; }
+    public AmortizationMethod AmortizationMethod { get; init; }
 
     public Money TotalOwed => CurrentBalance + AccruedInterest + TotalFees;
     public bool IsDelinquent => PaymentsMissed > 0;

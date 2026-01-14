@@ -6,8 +6,8 @@ namespace CreditSystem.Domain.ValueObjects;
 // Domain/ValueObjects/Money.cs
 public record Money
 {
-    public decimal Amount { get; }
-    public string Currency { get; }
+    public decimal Amount { get; init; }
+    public string Currency { get; init; }
     
     [JsonConstructor]
     public Money()

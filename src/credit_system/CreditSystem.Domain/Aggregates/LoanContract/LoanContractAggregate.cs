@@ -2,6 +2,7 @@ using CreditSystem.Domain.Aggregates.LoanContract.Events;
 using CreditSystem.Domain.Aggregates.LoanContract.Events.Base;
 using CreditSystem.Domain.Enums;
 using CreditSystem.Domain.Exceptions;
+using CreditSystem.Domain.Services.Amortization;
 using CreditSystem.Domain.ValueObjects;
 
 namespace CreditSystem.Domain.Aggregates.LoanContract;
@@ -37,13 +38,17 @@ public class LoanContractAggregate
         Money principal,
         InterestRate rate,
         int termMonths,
+        AmortizationMethod amortizationMethod,
+        IAmortizationCalculator calculator,
         Dictionary<string, object> evaluationMetadata)
     {
         var aggregate = new LoanContractAggregate();
         var id = Guid.NewGuid();
-        var schedule = PaymentSchedule.Calculate(principal, rate, termMonths, DateTime.UtcNow);
+        //var schedule = PaymentSchedule.Calculate(principal, rate, termMonths, DateTime.UtcNow);
         
-        aggregate.Id = id;  // <-- AGREGAR ESTA LÍNEA
+        aggregate.Id = id;
+
+        var schedule = calculator.Calculate(principal, rate, termMonths, DateTime.UtcNow);
 
         aggregate.Apply(new ContractCreated
         {
@@ -52,6 +57,7 @@ public class LoanContractAggregate
             Principal = principal,
             InterestRate = rate,
             TermMonths = termMonths,
+            AmortizationMethod = amortizationMethod,
             Schedule = schedule,
             EvaluationMetadata = evaluationMetadata
         }, isNew: true);
@@ -283,6 +289,7 @@ public class LoanContractAggregate
                 CurrentBalance = e.Principal,
                 InterestRate = e.InterestRate,
                 TermMonths = e.TermMonths,
+                AmortizationMethod = e.AmortizationMethod,
                 Schedule = e.Schedule,
                 Status = ContractStatus.Approved,
                 NextPaymentDue = e.Schedule.Entries.FirstOrDefault()?.DueDate,
