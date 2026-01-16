@@ -37,6 +37,10 @@ public static class DependencyInjection
     {
         services.AddScoped<IInterestAccrualJob, InterestAccrualJob>();
         services.AddScoped<IPaymentMissedJob, PaymentMissedJob>();
+        
+        services.AddScoped<IRevolvingInterestAccrualJob, RevolvingInterestAccrualJob>();
+        services.AddScoped<IStatementGenerationJob, StatementGenerationJob>();
+        services.AddScoped<IRevolvingPaymentMissedJob, RevolvingPaymentMissedJob>();
         return services;
     }
 
@@ -44,6 +48,9 @@ public static class DependencyInjection
     {
         services.Configure<LateFeeConfiguration>(
             configuration.GetSection("LateFee"));
+        
+        services.Configure<RevolvingLateFeeConfiguration>(
+            configuration.GetSection("RevolvingLateFee"));
 
         return services;
     }

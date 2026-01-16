@@ -1,6 +1,7 @@
 ﻿using CreditSystem.Domain.Abstractions;
 using CreditSystem.Domain.Abstractions.EventStore;
 using CreditSystem.Domain.Abstractions.Projections;
+using CreditSystem.Domain.Abstractions.Repositories;
 using CreditSystem.Domain.Abstractions.Services;
 using CreditSystem.Infrastructure.EventStore;
 using CreditSystem.Infrastructure.Messaging.RabbitMq.Consumers;
@@ -44,9 +45,9 @@ public static class DependencyInjection
 
     private static IServiceCollection AddProjectorStore(this IServiceCollection services, IConfiguration configuration)
     {
+        var connectionString = configuration.GetConnectionString("CreditDb")!;
         services.AddSingleton<IProjectionStore>(sp =>
-            new PostgresProjectionStore(
-                configuration.GetConnectionString("CreditDb")!, //readdb
+            new PostgresProjectionStore(connectionString, //readdb
                 sp.GetRequiredService<ILogger<PostgresProjectionStore>>()));
         
         services.AddScoped<IProjection, LoanSummaryProjector>();
@@ -56,8 +57,13 @@ public static class DependencyInjection
 
         services.AddScoped<IProjectionEngine,ProjectionEngine>();
         
+        services.AddScoped<IRevolvingCreditRepository, RevolvingCreditRepository>();
+        services.AddScoped<IRevolvingCreditQueryService>(sp => 
+            new RevolvingCreditQueryService(connectionString));
+        services.AddScoped<IProjection, RevolvingCreditSummaryProjector>();
+        
         return services;
-    }
+    }   
 
     private static IServiceCollection AddPersistenseService(this IServiceCollection services, IConfiguration configuration)
     {
@@ -70,6 +76,10 @@ public static class DependencyInjection
     {
         services.AddHostedService<InterestAccrualWorker>();
         services.AddHostedService<PaymentMissedWorker>();
+        
+        services.AddHostedService<RevolvingInterestAccrualWorker>();
+        services.AddHostedService<StatementGenerationWorker>();
+        services.AddHostedService<RevolvingPaymentMissedWorker>();
         return services;
     }
 

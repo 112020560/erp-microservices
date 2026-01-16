@@ -1,3 +1,4 @@
+using CreditSystem.Api.Endpoints;
 using CreditSystem.Api.EndPoints;
 using CreditSystem.Api.Infrastructure;
 using CreditSystem.Application;
@@ -38,6 +39,7 @@ app.UseExceptionHandler();
 app.MapLoanContractEndpoints();
 app.MapAdminEndpoints();
 app.MapDelinquentLoansEndpoints();
+app.MapRevolvingCreditEndpoints();
 
 app.UseHttpsRedirection();
 
