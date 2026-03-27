@@ -56,9 +56,16 @@ public class DrawFundsCommandHandler : IRequestHandler<DrawFundsCommand, DrawFun
         var events = aggregate.UncommittedEvents.ToList();
         await _repository.SaveAsync(aggregate, cancellationToken);
 
-        foreach (var @event in events)
+        // Proyectar a Read Models
+        try
         {
-            await _projectionEngine.ProjectEventAsync(@event, cancellationToken);
+            await _projectionEngine.ProjectEventsAsync(events, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Failed to project events for credit line {CreditLineId}. Read models can be rebuilt.",
+                aggregate.Id);
         }
 
         _logger.LogInformation(

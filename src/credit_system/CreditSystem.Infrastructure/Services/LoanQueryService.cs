@@ -1,6 +1,8 @@
+using CreditSystem.Application.Configuration;
 using CreditSystem.Domain.Abstractions.Services;
 using CreditSystem.Domain.Models.ReadModels;
 using Dapper;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace CreditSystem.Infrastructure.Services;
@@ -8,10 +10,12 @@ namespace CreditSystem.Infrastructure.Services;
 public class LoanQueryService: ILoanQueryService
 {
     private readonly string _connectionString;
+    private readonly LateFeeConfiguration _lateFeeConfig;
 
-    public LoanQueryService(string connectionString)
+    public LoanQueryService(string connectionString, IOptions<LateFeeConfiguration> lateFeeConfig)
     {
         _connectionString = connectionString;
+        _lateFeeConfig = lateFeeConfig.Value;
     }
     public async Task<bool> HasActiveLoansAsync(Guid customerId, CancellationToken ct = default)
     {
@@ -159,7 +163,7 @@ public class LoanQueryService: ILoanQueryService
     public async Task<IReadOnlyList<OverdueLoanInfo>> GetLoansWithOverduePaymentsAsync(CancellationToken ct = default)
     {
         const string sql = @"
-        SELECT 
+        SELECT
             ls.loan_id as LoanId,
             ls.customer_id as CustomerId,
             ls.payments_made + 1 as PaymentNumber,
@@ -170,23 +174,23 @@ public class LoanQueryService: ILoanQueryService
             FALSE as AlreadyRecorded
         FROM rm_loan_summaries ls
         WHERE ls.status IN ('Active', 'Delinquent')
-        AND ls.next_payment_date < CURRENT_DATE - INTERVAL '@GracePeriodDays days'
+        AND ls.next_payment_date < @CutoffDate
         AND ls.current_balance > 0
         AND NOT EXISTS (
-            SELECT 1 FROM rm_payment_history ph 
-            WHERE ph.loan_id = ls.loan_id 
+            SELECT 1 FROM rm_payment_history ph
+            WHERE ph.loan_id = ls.loan_id
             AND ph.payment_number = ls.payments_made + 1
         )
         ORDER BY ls.next_payment_date ASC";
 
         await using var connection = new NpgsqlConnection(_connectionString);
-    
-        // Obtener grace period de configuración
-        var gracePeriodDays = 5; // TODO: inyectar desde configuración
-    
+
+        // Calcular fecha de corte usando grace period de configuración
+        var cutoffDate = DateTime.UtcNow.Date.AddDays(-_lateFeeConfig.GracePeriodDays);
+
         var results = await connection.QueryAsync<OverdueLoanInfo>(
-            sql.Replace("@GracePeriodDays", gracePeriodDays.ToString()));
-    
+            sql, new { CutoffDate = cutoffDate });
+
         return results.ToList().AsReadOnly();
     }
     

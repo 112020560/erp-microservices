@@ -70,13 +70,19 @@ public class RestructureContractCommandHandler : IRequestHandler<RestructureCont
 
         var events = aggregate.UncommittedEvents.ToList();
 
-        // 6. Persistir
+        // 6. Persistir (fuente de verdad)
         await _repository.SaveAsync(aggregate, cancellationToken);
 
-        // 7. Proyectar
-        foreach (var @event in events)
+        // 7. Proyectar a Read Models
+        try
         {
-            await _projectionEngine.ProjectEventAsync(@event, cancellationToken);
+            await _projectionEngine.ProjectEventsAsync(events, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Failed to project events for loan {LoanId}. Read models can be rebuilt.",
+                aggregate.Id);
         }
 
         // 8. Calcular nuevo pago mensual

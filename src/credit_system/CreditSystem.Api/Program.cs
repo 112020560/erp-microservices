@@ -40,6 +40,8 @@ app.MapLoanContractEndpoints();
 app.MapAdminEndpoints();
 app.MapDelinquentLoansEndpoints();
 app.MapRevolvingCreditEndpoints();
+app.MapPaymentsEndpoints();
+app.MapWebhooksEndpoints();
 
 app.UseHttpsRedirection();
 

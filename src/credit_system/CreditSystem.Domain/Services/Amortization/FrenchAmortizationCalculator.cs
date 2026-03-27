@@ -18,11 +18,19 @@ public class FrenchAmortizationCalculator : IAmortizationCalculator
         {
             var interest = rate.CalculateMonthlyInterest(balance);
             var principalPaid = monthlyPayment - interest;
+
+            // Handle rounding issues: if principal to pay exceeds balance, adjust it
+            if (principalPaid.Amount > balance.Amount)
+            {
+                principalPaid = balance;
+            }
+
             balance = balance - principalPaid;
 
+            // Adjust last payment to clear any remaining balance due to rounding
             if (i == termMonths && balance.Amount != 0)
             {
-                principalPaid += balance;
+                principalPaid = principalPaid + balance;
                 balance = Money.Zero(principal.Currency);
             }
 

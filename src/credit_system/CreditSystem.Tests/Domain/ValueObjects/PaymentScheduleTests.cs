@@ -107,9 +107,9 @@ public class PaymentScheduleTests
     }
 
     [Fact]
-    public void Calculate_AllPaymentsShouldHaveSameAmount()
+    public void Calculate_AllPaymentsExceptLastShouldHaveSameAmount()
     {
-        // Arrange (French amortization has fixed payments)
+        // Arrange (French amortization has fixed payments, except last may vary due to rounding)
         var principal = new Money(10000m, "USD");
         var rate = new InterestRate(12m);
         var termMonths = 12;
@@ -119,8 +119,8 @@ public class PaymentScheduleTests
         var schedule = PaymentSchedule.Calculate(principal, rate, termMonths, startDate);
 
         // Assert
-        var payments = schedule.Entries.Select(e => e.TotalPayment.Amount).ToList();
-        payments.Should().AllBeEquivalentTo(payments.First());
+        var paymentsExceptLast = schedule.Entries.Take(termMonths - 1).Select(e => e.TotalPayment.Amount).ToList();
+        paymentsExceptLast.Should().AllBeEquivalentTo(paymentsExceptLast.First());
     }
 
     [Fact]

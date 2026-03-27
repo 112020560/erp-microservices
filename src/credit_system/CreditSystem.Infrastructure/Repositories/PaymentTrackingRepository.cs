@@ -78,6 +78,7 @@ public class PaymentTrackingRepository : IPaymentTrackingRepository
                 interest_paid as InterestPaid,
                 fees_paid as FeesPaid,
                 new_balance as NewBalance,
+                new_available_credit as NewAvailableCredit,
                 is_paid_off as IsPaidOff,
                 created_at as CreatedAt,
                 updated_at as UpdatedAt,
@@ -115,6 +116,7 @@ public class PaymentTrackingRepository : IPaymentTrackingRepository
                 interest_paid as InterestPaid,
                 fees_paid as FeesPaid,
                 new_balance as NewBalance,
+                new_available_credit as NewAvailableCredit,
                 is_paid_off as IsPaidOff,
                 created_at as CreatedAt,
                 updated_at as UpdatedAt,
@@ -153,6 +155,7 @@ public class PaymentTrackingRepository : IPaymentTrackingRepository
                 interest_paid as InterestPaid,
                 fees_paid as FeesPaid,
                 new_balance as NewBalance,
+                new_available_credit as NewAvailableCredit,
                 is_paid_off as IsPaidOff,
                 created_at as CreatedAt,
                 updated_at as UpdatedAt,
@@ -248,6 +251,7 @@ public class PaymentTrackingRepository : IPaymentTrackingRepository
         public decimal? InterestPaid { get; set; }
         public decimal? FeesPaid { get; set; }
         public decimal? NewBalance { get; set; }
+        public decimal? NewAvailableCredit { get; set; }
         public bool? IsPaidOff { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset UpdatedAt { get; set; }
@@ -271,6 +275,7 @@ public class PaymentTrackingRepository : IPaymentTrackingRepository
             InterestPaid = InterestPaid,
             FeesPaid = FeesPaid,
             NewBalance = NewBalance,
+            NewAvailableCredit = NewAvailableCredit,
             IsPaidOff = IsPaidOff,
             CreatedAt = CreatedAt,
             UpdatedAt = UpdatedAt,

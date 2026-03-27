@@ -1,28 +1,5 @@
-using CreditSystem.Domain.Entities;
+// This file is kept for backward compatibility.
+// The interface is now defined in CreditSystem.Domain.Abstractions.Persistence.IWebhookSubscriptionRepository
+// Infrastructure implementations should use the Domain interface.
 
-namespace CreditSystem.Infrastructure.Webhooks;
-
-/// <summary>
-/// Repository for webhook subscriptions.
-/// </summary>
-public interface IWebhookSubscriptionRepository
-{
-    Task<WebhookSubscription?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-
-    Task<IReadOnlyList<WebhookSubscription>> GetActiveByCustomerAndEventAsync(
-        Guid customerId,
-        string eventType,
-        CancellationToken cancellationToken = default);
-
-    Task<IReadOnlyList<WebhookSubscription>> GetByCustomerAsync(
-        Guid customerId,
-        CancellationToken cancellationToken = default);
-
-    Task<Guid> CreateAsync(WebhookSubscription subscription, CancellationToken cancellationToken = default);
-
-    Task UpdateAsync(WebhookSubscription subscription, CancellationToken cancellationToken = default);
-
-    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
-
-    Task DeactivateAsync(Guid id, CancellationToken cancellationToken = default);
-}
+global using IWebhookSubscriptionRepository = CreditSystem.Domain.Abstractions.Persistence.IWebhookSubscriptionRepository;

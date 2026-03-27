@@ -185,7 +185,7 @@ public class LoanContractAggregateTests
         var paymentAmount = 1000m;
 
         // Act
-        contract.ApplyPayment(Guid.NewGuid(), new Money(paymentAmount, "USD"), PaymentMethod.BankTransfer);
+        contract.ApplyPayment(Guid.NewGuid(), new Money(paymentAmount, "USD"), PaymentMethod.Wire);
 
         // Assert
         contract.State.CurrentBalance.Amount.Should().Be(initialBalance - paymentAmount);
@@ -199,7 +199,7 @@ public class LoanContractAggregateTests
         contract.Disburse("WIRE", "123");
 
         // Act
-        contract.ApplyPayment(Guid.NewGuid(), new Money(500m, "USD"), PaymentMethod.BankTransfer);
+        contract.ApplyPayment(Guid.NewGuid(), new Money(500m, "USD"), PaymentMethod.Wire);
 
         // Assert
         contract.State.PaymentsMade.Should().Be(1);
@@ -217,7 +217,7 @@ public class LoanContractAggregateTests
         var feesBeforePayment = contract.State.TotalFees.Amount;
 
         // Act
-        contract.ApplyPayment(Guid.NewGuid(), new Money(50m, "USD"), PaymentMethod.BankTransfer);
+        contract.ApplyPayment(Guid.NewGuid(), new Money(50m, "USD"), PaymentMethod.Wire);
 
         // Assert
         contract.State.TotalFees.Amount.Should().BeLessThan(feesBeforePayment);
@@ -231,7 +231,7 @@ public class LoanContractAggregateTests
         contract.Disburse("WIRE", "123");
 
         // Act
-        contract.ApplyPayment(Guid.NewGuid(), new Money(1000m, "USD"), PaymentMethod.BankTransfer);
+        contract.ApplyPayment(Guid.NewGuid(), new Money(1000m, "USD"), PaymentMethod.Wire);
 
         // Assert
         contract.State.Status.Should().Be(ContractStatus.PaidOff);
@@ -250,7 +250,7 @@ public class LoanContractAggregateTests
         var act = () => contract.ApplyPayment(
             Guid.NewGuid(),
             new Money(500m, "EUR"),
-            PaymentMethod.BankTransfer);
+            PaymentMethod.Wire);
 
         // Assert
         act.Should().Throw<DomainException>()
@@ -267,7 +267,7 @@ public class LoanContractAggregateTests
         var act = () => contract.ApplyPayment(
             Guid.NewGuid(),
             new Money(500m, "USD"),
-            PaymentMethod.BankTransfer);
+            PaymentMethod.Wire);
 
         // Assert
         act.Should().Throw<DomainException>()
@@ -468,7 +468,7 @@ public class LoanContractAggregateTests
         // Arrange
         var originalContract = CreateValidContract(principal: 10000m);
         originalContract.Disburse("WIRE", "123");
-        originalContract.ApplyPayment(Guid.NewGuid(), new Money(500m, "USD"), PaymentMethod.BankTransfer);
+        originalContract.ApplyPayment(Guid.NewGuid(), new Money(500m, "USD"), PaymentMethod.Wire);
 
         var events = originalContract.UncommittedEvents.ToList();
 

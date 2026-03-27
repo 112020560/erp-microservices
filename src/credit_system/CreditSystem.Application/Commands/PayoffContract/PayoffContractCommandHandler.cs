@@ -104,13 +104,19 @@ public class PayoffContractCommandHandler : IRequestHandler<PayoffContractComman
         // Guardar eventos ANTES de persistir
         var events = aggregate.UncommittedEvents.ToList();
 
-        // 7. Persistir
+        // 7. Persistir (fuente de verdad)
         await _repository.SaveAsync(aggregate, cancellationToken);
 
-        // 8. Proyectar
-        foreach (var @event in events)
+        // 8. Proyectar a Read Models
+        try
         {
-            await _projectionEngine.ProjectEventAsync(@event, cancellationToken);
+            await _projectionEngine.ProjectEventsAsync(events, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Failed to project events for loan {LoanId}. Read models can be rebuilt.",
+                aggregate.Id);
         }
 
         _logger.LogInformation(

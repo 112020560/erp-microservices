@@ -14,7 +14,7 @@
     </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../credits/Credit.Application/Credit.Application.csproj" />
+    <ProjectReference Include="../../src/credit_system/CreditSystem.Application/CreditSystem.Application.csproj" />
   </ItemGroup>
 
 </Project>

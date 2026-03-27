@@ -1,3 +1,4 @@
+using CreditSystem.Domain.Abstractions.Persistence;
 using CreditSystem.Domain.Entities;
 using Dapper;
 using Microsoft.Extensions.Configuration;

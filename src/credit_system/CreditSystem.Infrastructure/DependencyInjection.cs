@@ -1,19 +1,25 @@
-﻿using CreditSystem.Domain.Abstractions;
+using CreditSystem.Application.Configuration;
+using CreditSystem.Domain.Abstractions;
 using CreditSystem.Domain.Abstractions.EventStore;
+using CreditSystem.Domain.Abstractions.Persistence;
 using CreditSystem.Domain.Abstractions.Projections;
 using CreditSystem.Domain.Abstractions.Repositories;
 using CreditSystem.Domain.Abstractions.Services;
 using CreditSystem.Infrastructure.EventStore;
+using CreditSystem.Infrastructure.Messaging.Outbox;
 using CreditSystem.Infrastructure.Messaging.RabbitMq.Consumers;
+using CreditSystem.Infrastructure.Messaging.RabbitMq.Messages;
 using CreditSystem.Infrastructure.Projections;
 using CreditSystem.Infrastructure.Projectors;
 using CreditSystem.Infrastructure.Repositories;
 using CreditSystem.Infrastructure.Services;
+using CreditSystem.Infrastructure.Webhooks;
 using CreditSystem.Infrastructure.Workers;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace CreditSystem.Infrastructure;
 
@@ -24,7 +30,9 @@ public static class DependencyInjection
             .AddEventStore(configuration)
             .AddProjectorStore(configuration)
             .AddConsumerConfiguration(configuration)
-            .AddPersistenseService(configuration)
+            .AddPersistenceService(configuration)
+            .AddPaymentInfrastructure(configuration)
+            .AddWebhookInfrastructure(configuration)
             .AddWorkerConfiguration(configuration);
     
     private static IServiceCollection AddEventStore(this IServiceCollection services, IConfiguration configuration)
@@ -61,25 +69,62 @@ public static class DependencyInjection
         services.AddScoped<IRevolvingCreditQueryService>(sp => 
             new RevolvingCreditQueryService(connectionString));
         services.AddScoped<IProjection, RevolvingCreditSummaryProjector>();
-        
-        return services;
-    }   
+        services.AddScoped<IProjection, PaymentTrackingProjector>();
 
-    private static IServiceCollection AddPersistenseService(this IServiceCollection services, IConfiguration configuration)
+        return services;
+    }
+
+    private static IServiceCollection AddPaymentInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    {
+        // Payment tracking repository
+        services.AddScoped<IPaymentTrackingRepository, PaymentTrackingRepository>();
+
+        // Outbox pattern
+        services.AddScoped<IOutboxRepository, OutboxRepository>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddWebhookInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    {
+        // Webhook repositories
+        services.AddScoped<IWebhookSubscriptionRepository, WebhookSubscriptionRepository>();
+        services.AddScoped<IWebhookDeliveryRepository, WebhookDeliveryRepository>();
+
+        // Webhook notifier service
+        services.AddScoped<IWebhookNotifier, WebhookNotifier>();
+
+        // HTTP client for webhook delivery
+        services.AddHttpClient("WebhookClient", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
+        return services;
+    }
+
+    private static IServiceCollection AddPersistenceService(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<ILoanQueryService>(sp =>
-            new LoanQueryService(configuration.GetConnectionString("CreditDb")!));
+            new LoanQueryService(
+                configuration.GetConnectionString("CreditDb")!,
+                sp.GetRequiredService<IOptions<LateFeeConfiguration>>()));
         return services;
     }
 
     private static IServiceCollection AddWorkerConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
+        // Existing workers
         services.AddHostedService<InterestAccrualWorker>();
         services.AddHostedService<PaymentMissedWorker>();
-        
         services.AddHostedService<RevolvingInterestAccrualWorker>();
         services.AddHostedService<StatementGenerationWorker>();
         services.AddHostedService<RevolvingPaymentMissedWorker>();
+
+        // Async payment workers
+        services.AddHostedService<OutboxPublisherWorker>();
+        services.AddHostedService<WebhookDeliveryWorker>();
+
         return services;
     }
 
@@ -90,17 +135,36 @@ public static class DependencyInjection
         
         services.AddMassTransit(x =>
         {
+            // Customer event consumers
             x.AddConsumer<CustomerCreatedConsumer>();
             x.AddConsumer<CustomerUpdatedConsumer>();
+
+            // Async payment consumers
+            x.AddConsumer<ProcessPaymentConsumer>();
+            x.AddConsumer<ProcessRevolvingPaymentConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
                 cfg.Host(configuration["RabbitMqSettings:Uri"]);
 
+                // Customer events endpoint
                 cfg.ReceiveEndpoint("credit-service-customer-events", e =>
                 {
                     e.ConfigureConsumer<CustomerCreatedConsumer>(context);
                     e.ConfigureConsumer<CustomerUpdatedConsumer>(context);
+                });
+
+                // Async payment processing endpoint
+                cfg.ReceiveEndpoint("credit-service-payments", e =>
+                {
+                    e.PrefetchCount = 16;
+                    e.UseMessageRetry(r => r.Intervals(
+                        TimeSpan.FromSeconds(5),
+                        TimeSpan.FromSeconds(15),
+                        TimeSpan.FromSeconds(30)));
+
+                    e.ConfigureConsumer<ProcessPaymentConsumer>(context);
+                    e.ConfigureConsumer<ProcessRevolvingPaymentConsumer>(context);
                 });
             });
         });

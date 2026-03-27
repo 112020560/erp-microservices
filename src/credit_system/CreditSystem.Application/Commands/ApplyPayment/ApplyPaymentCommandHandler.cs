@@ -73,13 +73,21 @@ public class ApplyPaymentCommandHandler : IRequestHandler<ApplyPaymentCommand, A
         // Guardar eventos ANTES de persistir
         var events = aggregate.UncommittedEvents.ToList();
 
-        // 5. Persistir eventos
+        // 5. Persistir eventos (fuente de verdad)
         await _repository.SaveAsync(aggregate, cancellationToken);
 
-        // 6. Proyectar eventos
-        foreach (var @event in events)
+        // 6. Proyectar eventos a read models
+        try
         {
-            await _projectionEngine.ProjectEventAsync(@event, cancellationToken);
+            await _projectionEngine.ProjectEventsAsync(events, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            // Los eventos ya están persistidos - la proyección puede reconstruirse
+            // Loguear como warning y continuar para no perder la respuesta al cliente
+            _logger.LogWarning(ex,
+                "Failed to project events for loan {LoanId}. Events are persisted and read models can be rebuilt.",
+                request.LoanId);
         }
 
         var isPaidOff = aggregate.State.Status == ContractStatus.PaidOff;

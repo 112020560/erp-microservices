@@ -244,7 +244,7 @@ public class RevolvingCreditAggregateTests
         creditLine.DrawFunds(new Money(5000m, "USD"), "Purchase");
 
         // Act
-        creditLine.ApplyPayment(Guid.NewGuid(), new Money(2000m, "USD"), PaymentMethod.BankTransfer);
+        creditLine.ApplyPayment(Guid.NewGuid(), new Money(2000m, "USD"), PaymentMethod.Wire);
 
         // Assert
         creditLine.State.CurrentBalance.Amount.Should().Be(3000m);
@@ -259,7 +259,7 @@ public class RevolvingCreditAggregateTests
         creditLine.DrawFunds(new Money(5000m, "USD"), "Purchase");
 
         // Act
-        creditLine.ApplyPayment(Guid.NewGuid(), new Money(2000m, "USD"), PaymentMethod.BankTransfer);
+        creditLine.ApplyPayment(Guid.NewGuid(), new Money(2000m, "USD"), PaymentMethod.Wire);
 
         // Assert
         creditLine.State.AvailableCredit.Amount.Should().Be(7000m);
@@ -276,7 +276,7 @@ public class RevolvingCreditAggregateTests
         var act = () => creditLine.ApplyPayment(
             Guid.NewGuid(),
             new Money(0m, "USD"),
-            PaymentMethod.BankTransfer);
+            PaymentMethod.Wire);
 
         // Assert
         act.Should().Throw<DomainException>()
@@ -295,7 +295,7 @@ public class RevolvingCreditAggregateTests
         var act = () => creditLine.ApplyPayment(
             Guid.NewGuid(),
             new Money(100m, "USD"),
-            PaymentMethod.BankTransfer);
+            PaymentMethod.Wire);
 
         // Assert
         act.Should().Throw<DomainException>()
@@ -587,7 +587,7 @@ public class RevolvingCreditAggregateTests
         var original = CreateValidCreditLine(creditLimit: 10000m);
         original.Activate();
         original.DrawFunds(new Money(3000m, "USD"), "Purchase");
-        original.ApplyPayment(Guid.NewGuid(), new Money(500m, "USD"), PaymentMethod.BankTransfer);
+        original.ApplyPayment(Guid.NewGuid(), new Money(500m, "USD"), PaymentMethod.Wire);
 
         var events = original.UncommittedEvents.ToList();
 

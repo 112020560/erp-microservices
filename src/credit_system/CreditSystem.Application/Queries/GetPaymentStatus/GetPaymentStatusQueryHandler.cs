@@ -45,6 +45,7 @@ public class GetPaymentStatusQueryHandler : IRequestHandler<GetPaymentStatusQuer
             InterestPaid = tracking.InterestPaid,
             FeesPaid = tracking.FeesPaid,
             NewBalance = tracking.NewBalance,
+            NewAvailableCredit = tracking.NewAvailableCredit,
             IsPaidOff = tracking.IsPaidOff,
             ErrorCode = tracking.ErrorCode,
             ErrorMessage = tracking.ErrorMessage

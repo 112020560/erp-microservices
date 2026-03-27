@@ -45,6 +45,13 @@ public record PaymentSchedule
         {
             var interest = rate.CalculateMonthlyInterest(balance);
             var principalPaid = monthlyPayment - interest;
+
+            // Handle rounding issues: if principal to pay exceeds balance, adjust it
+            if (principalPaid.Amount > balance.Amount)
+            {
+                principalPaid = balance;
+            }
+
             balance = balance - principalPaid;
 
             // Ajustar último pago

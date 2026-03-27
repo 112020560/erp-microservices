@@ -38,11 +38,26 @@ public class ProjectionEngine: IProjectionEngine
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, 
+                _logger.LogError(ex,
                     "Error projecting event {EventType} to {Projection}",
                     @event.GetType().Name, projection.ProjectionName);
                 throw;
             }
+        }
+    }
+
+    public async Task ProjectEventsAsync(IEnumerable<IDomainEvent> events, CancellationToken ct = default)
+    {
+        var eventList = events.ToList();
+
+        if (eventList.Count == 0)
+            return;
+
+        _logger.LogDebug("Projecting {Count} events", eventList.Count);
+
+        foreach (var @event in eventList)
+        {
+            await ProjectEventAsync(@event, ct);
         }
     }
 

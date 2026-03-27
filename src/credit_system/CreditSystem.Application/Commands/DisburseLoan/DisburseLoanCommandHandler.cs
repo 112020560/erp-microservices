@@ -53,13 +53,19 @@ public class DisburseLoanCommandHandler : IRequestHandler<DisburseLoanCommand, D
         // Guardar eventos ANTES de persistir
         var events = aggregate.UncommittedEvents.ToList();
 
-        // 3. Persistir eventos
+        // 3. Persistir eventos (fuente de verdad)
         await _repository.SaveAsync(aggregate, cancellationToken);
 
-        // 4. Proyectar eventos
-        foreach (var @event in events)
+        // 4. Proyectar eventos a Read Models
+        try
         {
-            await _projectionEngine.ProjectEventAsync(@event, cancellationToken);
+            await _projectionEngine.ProjectEventsAsync(events, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Failed to project events for loan {LoanId}. Read models can be rebuilt.",
+                aggregate.Id);
         }
 
         _logger.LogInformation(
