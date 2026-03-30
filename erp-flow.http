@@ -1,0 +1,241 @@
+### ============================================================
+###  ERP - Flujo completo: Creación de Producto y Stock
+###  Orden de ejecución: sigue la numeración (1 → 10)
+### ============================================================
+###
+###  Microservicios:
+###    Catalogs  → http://localhost:5181
+###    Inventory → http://localhost:5010
+###
+###  Antes de correr:
+###    1. docker compose up -d          (RabbitMQ + Seq)
+###    2. cd src/Catalogs/Catalogs.WebApi   && dotnet run
+###    3. cd src/Inventory/Inventory.WebApi && dotnet run
+###
+### ============================================================
+
+@catalogs  = http://localhost:5181/api/v1
+@inventory = http://localhost:5010/api/v1
+
+# ── IDs que se copian de las respuestas anteriores ────────────
+@brandId      = <pega-el-id-de-la-respuesta-1>
+@categoryId   = <pega-el-id-de-la-respuesta-2>
+@productId    = <pega-el-id-de-la-respuesta-3>
+@warehouseId  = <pega-el-id-de-la-respuesta-4>
+@locationId   = <pega-el-id-de-la-respuesta-5>
+@reservationId = <pega-el-id-de-la-respuesta-9>
+
+
+### ============================================================
+###  CATALOGS
+### ============================================================
+
+### 1. Crear Marca
+# @name createBrand
+POST {{catalogs}}/brands
+Content-Type: application/json
+
+{
+  "name": "TechPro",
+  "description": "Línea de productos tecnológicos"
+}
+
+###
+
+### 2. Crear Categoría
+# @name createCategory
+POST {{catalogs}}/categories
+Content-Type: application/json
+
+{
+  "name": "Electrónicos",
+  "description": "Equipos y accesorios electrónicos",
+  "parentCategoryId": null
+}
+
+###
+
+### 3. Crear Producto
+# @name createProduct
+# Requiere: brandId y categoryId del paso 1 y 2
+POST {{catalogs}}/products
+Content-Type: application/json
+
+{
+  "sku": "LAPTOP-TECHPRO-001",
+  "name": "Laptop TechPro 15\"",
+  "description": "Laptop de alto rendimiento para profesionales",
+  "price": 1299.99,
+  "currency": "USD",
+  "categoryId": "{{categoryId}}",
+  "brandId": "{{brandId}}"
+}
+
+###
+
+### 4. Consultar Productos
+GET {{catalogs}}/products
+Accept: application/json
+
+###
+
+### 5. Consultar Producto por ID
+GET {{catalogs}}/products/{{productId}}
+Accept: application/json
+
+###
+
+### 6. Cambiar Precio del Producto
+PATCH {{catalogs}}/products/{{productId}}/price
+Content-Type: application/json
+
+{
+  "productId": "{{productId}}",
+  "newPrice": 1199.99,
+  "currency": "USD"
+}
+
+###
+
+### 7. Activar Producto
+PATCH {{catalogs}}/products/{{productId}}/activate
+
+###
+
+
+### ============================================================
+###  INVENTORY
+### ============================================================
+
+### 8. Crear Almacén
+# @name createWarehouse
+POST {{inventory}}/warehouses
+Content-Type: application/json
+
+{
+  "code": "ALM-CENTRAL-01",
+  "name": "Almacén Central",
+  "description": "Bodega principal de operaciones"
+}
+
+###
+
+### 9. Agregar Ubicación al Almacén
+# @name addLocation
+# Requiere: warehouseId del paso 8
+POST {{inventory}}/warehouses/{{warehouseId}}/locations
+Content-Type: application/json
+
+{
+  "warehouseId": "{{warehouseId}}",
+  "aisle": "A",
+  "rack": "01",
+  "level": "1",
+  "name": "Estante A-01-1"
+}
+
+###
+
+### 10. Consultar Almacenes
+GET {{inventory}}/warehouses
+Accept: application/json
+
+###
+
+### 11. Recibir Mercancía (Receipt)
+# ⚡ Este paso requiere que el evento ProductCreated haya sido
+#    consumido por Inventory (ProductSnapshot creado vía RabbitMQ).
+#    Espera ~2s después del paso 3 antes de ejecutar.
+# Requiere: warehouseId (paso 8), locationId (paso 9), productId (paso 3)
+POST {{inventory}}/stock/receive
+Content-Type: application/json
+
+{
+  "warehouseId": "{{warehouseId}}",
+  "reference": "PO-2026-0001",
+  "notes": "Primera recepción de laptops",
+  "date": "2026-03-30T10:00:00Z",
+  "lines": [
+    {
+      "productId": "{{productId}}",
+      "locationId": "{{locationId}}",
+      "lotId": null,
+      "quantity": 50,
+      "unitCost": 850.00
+    }
+  ]
+}
+
+###
+
+### 12. Consultar Stock
+GET {{inventory}}/stock
+Accept: application/json
+
+###
+
+### 13. Consultar Kardex del Producto
+GET {{inventory}}/stock/kardex/{{productId}}
+Accept: application/json
+
+###
+
+### 14. Reservar Stock (para un pedido de venta)
+# @name createReservation
+POST {{inventory}}/reservations
+Content-Type: application/json
+
+{
+  "productId": "{{productId}}",
+  "warehouseId": "{{warehouseId}}",
+  "locationId": "{{locationId}}",
+  "lotId": null,
+  "quantity": 5,
+  "salesOrderId": "00000000-0000-0000-0000-000000000001",
+  "expiresAt": "2026-04-30T23:59:59Z"
+}
+
+###
+
+### 15. Cancelar Reserva
+PATCH {{inventory}}/reservations/{{reservationId}}/cancel
+
+###
+
+### 16. Emitir Mercancía (Issue / Despacho)
+POST {{inventory}}/stock/issue
+Content-Type: application/json
+
+{
+  "warehouseId": "{{warehouseId}}",
+  "reference": "SO-2026-0001",
+  "notes": "Despacho por orden de venta",
+  "date": "2026-03-30T14:00:00Z",
+  "lines": [
+    {
+      "productId": "{{productId}}",
+      "locationId": "{{locationId}}",
+      "lotId": null,
+      "quantity": 3
+    }
+  ]
+}
+
+###
+
+### 17. Ajuste de Inventario
+POST {{inventory}}/stock/adjust
+Content-Type: application/json
+
+{
+  "productId": "{{productId}}",
+  "warehouseId": "{{warehouseId}}",
+  "locationId": "{{locationId}}",
+  "lotId": null,
+  "newQuantity": 45,
+  "unitCost": 850.00,
+  "reference": "ADJ-2026-001",
+  "notes": "Ajuste por conteo físico"
+}
+
+###

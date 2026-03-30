@@ -1,0 +1,44 @@
+version: "3.9"
+
+# Infraestructura local para desarrollo del ERP
+# Los microservicios corren con "dotnet run" y se conectan a:
+#   - RabbitMQ: localhost:5672
+#   - Seq:      localhost:5341
+#   - PostgreSQL: Railway (externo, ver appsettings.Development.json)
+
+services:
+
+  # ─── Mensajería ───────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: erp-rabbitmq
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Management UI → http://localhost:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: "Abc..123"
+      RABBITMQ_DEFAULT_VHOST: smart-core
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Logs estructurados ───────────────────────────────────────
+  seq:
+    image: datalust/seq:latest
+    container_name: erp-seq
+    ports:
+      - "5341:5341"     # Ingestion (Serilog sink)
+      - "8081:80"       # UI → http://localhost:8081
+    environment:
+      ACCEPT_EULA: Y
+    volumes:
+      - seq_data:/data
+
+volumes:
+  rabbitmq_data:
+  seq_data:
