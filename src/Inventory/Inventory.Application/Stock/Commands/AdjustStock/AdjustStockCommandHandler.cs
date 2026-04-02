@@ -5,6 +5,7 @@ using Inventory.Domain.Abstractions.Services;
 using Inventory.Domain.Catalog;
 using Inventory.Domain.Movements;
 using Inventory.Domain.Stock;
+using MassTransit;
 using SharedKernel;
 
 namespace Inventory.Application.Stock.Commands.AdjustStock;
@@ -14,7 +15,7 @@ internal sealed class AdjustStockCommandHandler(
     IStockEntryRepository stockEntryRepository,
     IProductSnapshotRepository productSnapshotRepository,
     IMovementNumberGenerator movementNumberGenerator,
-    IEventPublisher eventPublisher,
+    IPublishEndpoint eventPublisher,
     IUnitOfWork unitOfWork)
     : ICommandHandler<AdjustStockCommand, string>
 {
@@ -73,7 +74,7 @@ internal sealed class AdjustStockCommandHandler(
 
         movementRepository.Add(movement);
 
-        await eventPublisher.PublishAsync(new StockMovementConfirmedMessage
+        await eventPublisher.Publish(new StockMovementConfirmedMessage
         {
             MovementId = movement.Id,
             MovementNumber = movement.MovementNumber,

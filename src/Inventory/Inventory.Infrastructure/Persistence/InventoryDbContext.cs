@@ -4,7 +4,6 @@ using Inventory.Domain.Movements;
 using Inventory.Domain.PhysicalInventory;
 using Inventory.Domain.Stock;
 using Inventory.Domain.Warehouses;
-using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Infrastructure.Persistence;
@@ -25,10 +24,5 @@ public sealed class InventoryDbContext(DbContextOptions<InventoryDbContext> opti
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(InventoryDbContext).Assembly);
-
-        // MassTransit Outbox tables
-        modelBuilder.AddInboxStateEntity();
-        modelBuilder.AddOutboxMessageEntity();
-        modelBuilder.AddOutboxStateEntity();
     }
 }

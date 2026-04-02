@@ -19,6 +19,7 @@ namespace Catalogs.Infrastructure.Migrations
                     EventType = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
                     Payload = table.Column<string>(type: "text", nullable: false),
                     OccurredOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     ProcessedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     Error = table.Column<string>(type: "text", nullable: true),
                     RetryCount = table.Column<int>(type: "integer", nullable: false)
@@ -29,9 +30,9 @@ namespace Catalogs.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_outbox_events_ProcessedOn_RetryCount_OccurredOn",
+                name: "IX_outbox_events_Status_RetryCount_OccurredOn",
                 table: "outbox_events",
-                columns: new[] { "ProcessedOn", "RetryCount", "OccurredOn" });
+                columns: new[] { "Status", "RetryCount", "OccurredOn" });
         }
 
         /// <inheritdoc />

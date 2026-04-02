@@ -1,4 +1,5 @@
 using Catalogs.Infrastructure.Persistence;
+using Catalogs.Infrastructure.Persistence.Outbox;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,7 +44,7 @@ public sealed class OutboxDeliveryWorker(
         var bus = scope.ServiceProvider.GetRequiredService<IBus>();
 
         var pending = await db.OutboxEvents
-            .Where(e => e.ProcessedOn == null && e.RetryCount < MaxRetries)
+            .Where(e => e.Status == OutboxEventStatus.Pending && e.RetryCount < MaxRetries)
             .OrderBy(e => e.OccurredOn)
             .Take(BatchSize)
             .ToListAsync(cancellationToken);
@@ -60,12 +61,14 @@ public sealed class OutboxDeliveryWorker(
                 if (message is null)
                 {
                     logger.LogWarning("No mapper found for event type {EventType}", outboxEvent.EventType);
+                    outboxEvent.Status = OutboxEventStatus.Failed;
                     outboxEvent.ProcessedOn = DateTimeOffset.UtcNow;
                     outboxEvent.Error = $"No mapper found for type '{outboxEvent.EventType}'";
                 }
                 else
                 {
                     await bus.Publish(message, cancellationToken);
+                    outboxEvent.Status = OutboxEventStatus.Delivered;
                     outboxEvent.ProcessedOn = DateTimeOffset.UtcNow;
                     logger.LogInformation("Published {EventType} {Id}", outboxEvent.EventType, outboxEvent.Id);
                 }
@@ -74,8 +77,19 @@ public sealed class OutboxDeliveryWorker(
             {
                 outboxEvent.RetryCount++;
                 outboxEvent.Error = ex.Message;
-                logger.LogError(ex, "Failed to publish {EventType} {Id} — retry {Retry}/{Max}",
-                    outboxEvent.EventType, outboxEvent.Id, outboxEvent.RetryCount, MaxRetries);
+
+                if (outboxEvent.RetryCount >= MaxRetries)
+                {
+                    outboxEvent.Status = OutboxEventStatus.Failed;
+                    outboxEvent.ProcessedOn = DateTimeOffset.UtcNow;
+                    logger.LogError(ex, "Permanently failed {EventType} {Id} after {Max} retries",
+                        outboxEvent.EventType, outboxEvent.Id, MaxRetries);
+                }
+                else
+                {
+                    logger.LogWarning(ex, "Failed to publish {EventType} {Id} — retry {Retry}/{Max}",
+                        outboxEvent.EventType, outboxEvent.Id, outboxEvent.RetryCount, MaxRetries);
+                }
             }
         }
 

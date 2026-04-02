@@ -1,8 +1,9 @@
+using Catalogs.Domain.Products.Events;
 using SharedKernel;
 
 namespace Catalogs.Domain.Products;
 
-public sealed class Product
+public sealed class Product : AggregateRoot
 {
     private Product() { }
 
@@ -46,7 +47,7 @@ public sealed class Product
         if (skuResult.IsFailure)
             return Result.Failure<Product>(skuResult.Error);
 
-        return Result.Success(new Product
+        var product = new Product
         {
             Id = Guid.NewGuid(),
             Sku = skuResult.Value,
@@ -59,7 +60,14 @@ public sealed class Product
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
             UpdatedAt = DateTimeOffset.UtcNow
-        });
+        };
+
+        product.RaiseDomainEvent(new ProductCreatedDomainEvent(
+            product.Id, product.Sku.Value, product.Name, product.Description,
+            product.Price, product.Currency, product.CategoryId, product.BrandId,
+            product.CreatedAt));
+
+        return Result.Success(product);
     }
 
     public Result Update(string name, string? description, Guid categoryId, Guid brandId)
@@ -79,6 +87,9 @@ public sealed class Product
         BrandId = brandId;
         UpdatedAt = DateTimeOffset.UtcNow;
 
+        RaiseDomainEvent(new ProductUpdatedDomainEvent(
+            Id, Name, Description, CategoryId, BrandId, UpdatedAt));
+
         return Result.Success();
     }
 
@@ -90,9 +101,15 @@ public sealed class Product
         if (string.IsNullOrWhiteSpace(currency))
             return Result.Failure(ProductError.CurrencyRequired);
 
+        decimal oldPrice = Price;
+        string oldCurrency = Currency;
+
         Price = newPrice;
         Currency = currency.ToUpperInvariant().Trim();
         UpdatedAt = DateTimeOffset.UtcNow;
+
+        RaiseDomainEvent(new ProductPriceChangedDomainEvent(
+            Id, Sku.Value, oldPrice, oldCurrency, Price, Currency, UpdatedAt));
 
         return Result.Success();
     }
@@ -104,6 +121,9 @@ public sealed class Product
 
         IsActive = true;
         UpdatedAt = DateTimeOffset.UtcNow;
+
+        RaiseDomainEvent(new ProductActivatedDomainEvent(Id, Sku.Value, UpdatedAt));
+
         return Result.Success();
     }
 
@@ -114,6 +134,9 @@ public sealed class Product
 
         IsActive = false;
         UpdatedAt = DateTimeOffset.UtcNow;
+
+        RaiseDomainEvent(new ProductDeactivatedDomainEvent(Id, Sku.Value, UpdatedAt));
+
         return Result.Success();
     }
 }

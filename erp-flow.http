@@ -1,6 +1,6 @@
 ### ============================================================
 ###  ERP - Flujo completo: Creación de Producto y Stock
-###  Orden de ejecución: sigue la numeración (1 → 10)
+###  Orden de ejecución: sigue la numeración (1 → 19)
 ### ============================================================
 ###
 ###  Microservicios:
@@ -18,9 +18,9 @@
 @inventory = http://localhost:5010/api/v1
 
 # ── IDs que se copian de las respuestas anteriores ────────────
-@brandId      = <pega-el-id-de-la-respuesta-1>
-@categoryId   = <pega-el-id-de-la-respuesta-2>
-@productId    = <pega-el-id-de-la-respuesta-3>
+@brandId      = 70f6627c-a133-4a97-821e-edce04097ef5
+@categoryId   = d8198b74-9e04-447e-b2b0-1f66d563c88b
+@productId    = 69973bd3-a270-46b4-b2f1-c68ebd53a791
 @warehouseId  = <pega-el-id-de-la-respuesta-4>
 @locationId   = <pega-el-id-de-la-respuesta-5>
 @reservationId = <pega-el-id-de-la-respuesta-9>
@@ -62,9 +62,9 @@ POST {{catalogs}}/products
 Content-Type: application/json
 
 {
-  "sku": "LAPTOP-TECHPRO-001",
-  "name": "Laptop TechPro 15\"",
-  "description": "Laptop de alto rendimiento para profesionales",
+  "sku": "LAPTOP-TECHPRO-007",
+  "name": "Laptop TechPro Prueba 7\"",
+  "description": "Laptop de alto rendimiento para profesionales #7",
   "price": 1299.99,
   "currency": "USD",
   "categoryId": "{{categoryId}}",
@@ -107,7 +107,24 @@ PATCH {{catalogs}}/products/{{productId}}/activate
 ###  INVENTORY
 ### ============================================================
 
-### 8. Crear Almacén
+### 8. Sync manual del producto en Inventory
+# ⚠️  Úsalo si el evento ProductCreated no llegó a Inventory
+#     (p.ej. Inventory no estaba corriendo cuando se creó el producto).
+#     Requiere: productId, brandId, categoryId del paso 1-3.
+POST {{inventory}}/products/sync
+Content-Type: application/json
+
+{
+  "productId": "{{productId}}",
+  "sku": "LAPTOP-TECHPRO-001",
+  "name": "Laptop TechPro 15\"",
+  "categoryId": "{{categoryId}}",
+  "brandId": "{{brandId}}"
+}
+
+###
+
+### 10. Crear Almacén
 # @name createWarehouse
 POST {{inventory}}/warehouses
 Content-Type: application/json
@@ -120,9 +137,9 @@ Content-Type: application/json
 
 ###
 
-### 9. Agregar Ubicación al Almacén
+### 11. Agregar Ubicación al Almacén
 # @name addLocation
-# Requiere: warehouseId del paso 8
+# Requiere: warehouseId del paso 10
 POST {{inventory}}/warehouses/{{warehouseId}}/locations
 Content-Type: application/json
 
@@ -136,17 +153,16 @@ Content-Type: application/json
 
 ###
 
-### 10. Consultar Almacenes
+### 12. Consultar Almacenes
 GET {{inventory}}/warehouses
 Accept: application/json
 
 ###
 
-### 11. Recibir Mercancía (Receipt)
-# ⚡ Este paso requiere que el evento ProductCreated haya sido
-#    consumido por Inventory (ProductSnapshot creado vía RabbitMQ).
-#    Espera ~2s después del paso 3 antes de ejecutar.
-# Requiere: warehouseId (paso 8), locationId (paso 9), productId (paso 3)
+### 13. Recibir Mercancía (Receipt)
+# Requiere: paso 8 (sync), paso 10 (warehouse), paso 11 (location)
+# Si usaste el sync manual (paso 8), ya puedes recibir directamente.
+# Requiere: warehouseId (paso 10), locationId (paso 11), productId (paso 3)
 POST {{inventory}}/stock/receive
 Content-Type: application/json
 
@@ -168,19 +184,19 @@ Content-Type: application/json
 
 ###
 
-### 12. Consultar Stock
+### 14. Consultar Stock
 GET {{inventory}}/stock
 Accept: application/json
 
 ###
 
-### 13. Consultar Kardex del Producto
+### 15. Consultar Kardex del Producto
 GET {{inventory}}/stock/kardex/{{productId}}
 Accept: application/json
 
 ###
 
-### 14. Reservar Stock (para un pedido de venta)
+### 16. Reservar Stock (para un pedido de venta)
 # @name createReservation
 POST {{inventory}}/reservations
 Content-Type: application/json
@@ -197,12 +213,12 @@ Content-Type: application/json
 
 ###
 
-### 15. Cancelar Reserva
+### 17. Cancelar Reserva
 PATCH {{inventory}}/reservations/{{reservationId}}/cancel
 
 ###
 
-### 16. Emitir Mercancía (Issue / Despacho)
+### 18. Emitir Mercancía (Issue / Despacho)
 POST {{inventory}}/stock/issue
 Content-Type: application/json
 
@@ -223,7 +239,7 @@ Content-Type: application/json
 
 ###
 
-### 17. Ajuste de Inventario
+### 19. Ajuste de Inventario
 POST {{inventory}}/stock/adjust
 Content-Type: application/json
 

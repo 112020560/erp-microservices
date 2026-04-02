@@ -2,14 +2,12 @@ using Catalogs.Application.Abstractions.Messaging;
 using Catalogs.Domain.Abstractions.Persistence;
 using Catalogs.Domain.Products;
 using SharedKernel;
-using SharedKernel.Contracts.Catalogs.Products;
 
 namespace Catalogs.Application.Products.Commands.UpdateProduct;
 
 internal sealed class UpdateProductCommandHandler(
     IProductRepository productRepository,
-    IUnitOfWork unitOfWork,
-    IEventPublisher eventPublisher)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<UpdateProductCommand>
 {
     public async Task<Result> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
@@ -25,16 +23,6 @@ internal sealed class UpdateProductCommandHandler(
             return result;
 
         productRepository.Update(product);
-
-        await eventPublisher.PublishAsync(new ProductUpdatedMessage
-        {
-            ProductId = product.Id,
-            Name = product.Name,
-            Description = product.Description,
-            CategoryId = product.CategoryId,
-            BrandId = product.BrandId,
-            UpdatedAt = product.UpdatedAt
-        }, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -1,6 +1,7 @@
 using Catalogs.Application.Abstractions.Messaging;
 using Catalogs.Domain.Abstractions.Persistence;
 using Catalogs.Domain.Brands;
+using MassTransit;
 using SharedKernel;
 using SharedKernel.Contracts.Catalogs.Brands;
 
@@ -9,7 +10,7 @@ namespace Catalogs.Application.Brands.Commands.CreateBrand;
 internal sealed class CreateBrandCommandHandler(
     IBrandRepository brandRepository,
     IUnitOfWork unitOfWork,
-    IEventPublisher eventPublisher)
+    IPublishEndpoint eventPublisher)
     : ICommandHandler<CreateBrandCommand, Guid>
 {
     public async Task<Result<Guid>> Handle(CreateBrandCommand request, CancellationToken cancellationToken)
@@ -26,7 +27,7 @@ internal sealed class CreateBrandCommandHandler(
 
         brandRepository.Add(brand);
 
-        await eventPublisher.PublishAsync(new BrandCreatedMessage
+        await eventPublisher.Publish(new BrandCreatedMessage
         {
             BrandId = brand.Id,
             Name = brand.Name,

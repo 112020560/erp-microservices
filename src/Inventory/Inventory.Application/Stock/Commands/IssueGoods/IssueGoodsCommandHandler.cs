@@ -4,6 +4,7 @@ using Inventory.Domain.Abstractions.Persistence;
 using Inventory.Domain.Abstractions.Services;
 using Inventory.Domain.Movements;
 using Inventory.Domain.Stock;
+using MassTransit;
 using SharedKernel;
 
 namespace Inventory.Application.Stock.Commands.IssueGoods;
@@ -13,7 +14,7 @@ internal sealed class IssueGoodsCommandHandler(
     IStockEntryRepository stockEntryRepository,
     IProductSnapshotRepository productSnapshotRepository,
     IMovementNumberGenerator movementNumberGenerator,
-    IEventPublisher eventPublisher,
+    IPublishEndpoint eventPublisher,
     IUnitOfWork unitOfWork)
     : ICommandHandler<IssueGoodsCommand, string>
 {
@@ -67,7 +68,7 @@ internal sealed class IssueGoodsCommandHandler(
 
         movementRepository.Add(movement);
 
-        await eventPublisher.PublishAsync(new StockMovementConfirmedMessage
+        await eventPublisher.Publish(new StockMovementConfirmedMessage
         {
             MovementId = movement.Id,
             MovementNumber = movement.MovementNumber,
@@ -79,7 +80,7 @@ internal sealed class IssueGoodsCommandHandler(
         foreach (var (productId, onHand, minStock) in lowStockItems)
         {
             var snapshot = await productSnapshotRepository.GetByIdAsync(productId, cancellationToken);
-            await eventPublisher.PublishAsync(new LowStockDetectedMessage
+            await eventPublisher.Publish(new LowStockDetectedMessage
             {
                 ProductId = productId,
                 Sku = snapshot?.Sku ?? string.Empty,

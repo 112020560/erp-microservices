@@ -1,6 +1,7 @@
 using Inventory.Application.Abstractions.Messaging;
 using Inventory.Domain.Abstractions.Persistence;
 using Inventory.Domain.Stock;
+using MassTransit;
 using SharedKernel;
 using SharedKernel.Contracts.Inventory;
 
@@ -16,7 +17,7 @@ public sealed record StockReservationReleasedMessage : IStockReservationReleased
 internal sealed class ReleaseStockReservationCommandHandler(
     IStockReservationRepository reservationRepository,
     IStockEntryRepository stockEntryRepository,
-    IEventPublisher eventPublisher,
+    IPublishEndpoint eventPublisher,
     IUnitOfWork unitOfWork)
     : ICommandHandler<ReleaseStockReservationCommand>
 {
@@ -41,7 +42,7 @@ internal sealed class ReleaseStockReservationCommandHandler(
 
         reservationRepository.Update(reservation);
 
-        await eventPublisher.PublishAsync(new StockReservationReleasedMessage
+        await eventPublisher.Publish(new StockReservationReleasedMessage
         {
             ReservationId = reservation.Id,
             SalesOrderId = reservation.SalesOrderId,

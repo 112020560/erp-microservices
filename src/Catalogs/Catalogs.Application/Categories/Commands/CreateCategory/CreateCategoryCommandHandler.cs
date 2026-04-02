@@ -1,6 +1,7 @@
 using Catalogs.Application.Abstractions.Messaging;
 using Catalogs.Domain.Abstractions.Persistence;
 using Catalogs.Domain.Categories;
+using MassTransit;
 using SharedKernel;
 using SharedKernel.Contracts.Catalogs.Categories;
 
@@ -9,7 +10,7 @@ namespace Catalogs.Application.Categories.Commands.CreateCategory;
 internal sealed class CreateCategoryCommandHandler(
     ICategoryRepository categoryRepository,
     IUnitOfWork unitOfWork,
-    IEventPublisher eventPublisher)
+    IPublishEndpoint eventPublisher)
     : ICommandHandler<CreateCategoryCommand, Guid>
 {
     public async Task<Result<Guid>> Handle(CreateCategoryCommand request, CancellationToken cancellationToken)
@@ -26,7 +27,7 @@ internal sealed class CreateCategoryCommandHandler(
 
         categoryRepository.Add(category);
 
-        await eventPublisher.PublishAsync(new CategoryCreatedMessage
+        await eventPublisher.Publish(new CategoryCreatedMessage
         {
             CategoryId = category.Id,
             Name = category.Name,

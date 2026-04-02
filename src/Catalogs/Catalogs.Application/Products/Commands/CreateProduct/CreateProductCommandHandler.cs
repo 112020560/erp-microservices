@@ -2,14 +2,12 @@ using Catalogs.Application.Abstractions.Messaging;
 using Catalogs.Domain.Abstractions.Persistence;
 using Catalogs.Domain.Products;
 using SharedKernel;
-using SharedKernel.Contracts.Catalogs.Products;
 
 namespace Catalogs.Application.Products.Commands.CreateProduct;
 
 internal sealed class CreateProductCommandHandler(
     IProductRepository productRepository,
-    IUnitOfWork unitOfWork,
-    IEventPublisher eventPublisher)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<CreateProductCommand, Guid>
 {
     public async Task<Result<Guid>> Handle(CreateProductCommand request, CancellationToken cancellationToken)
@@ -32,19 +30,6 @@ internal sealed class CreateProductCommandHandler(
         var product = result.Value;
 
         productRepository.Add(product);
-
-        await eventPublisher.PublishAsync(new ProductCreatedMessage
-        {
-            ProductId = product.Id,
-            Sku = product.Sku.Value,
-            Name = product.Name,
-            Description = product.Description,
-            Price = product.Price,
-            Currency = product.Currency,
-            CategoryId = product.CategoryId,
-            BrandId = product.BrandId,
-            CreatedAt = product.CreatedAt
-        }, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

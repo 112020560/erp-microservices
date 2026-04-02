@@ -2,6 +2,7 @@ using Inventory.Application.Abstractions.Messaging;
 using Inventory.Domain.Abstractions.Persistence;
 using Inventory.Domain.Abstractions.Services;
 using Inventory.Domain.Stock;
+using MassTransit;
 using SharedKernel;
 using SharedKernel.Contracts.Inventory;
 
@@ -22,7 +23,7 @@ internal sealed class CreateStockReservationCommandHandler(
     IStockEntryRepository stockEntryRepository,
     IStockReservationRepository reservationRepository,
     IMovementNumberGenerator movementNumberGenerator,
-    IEventPublisher eventPublisher,
+    IPublishEndpoint eventPublisher,
     IUnitOfWork unitOfWork)
     : ICommandHandler<CreateStockReservationCommand, Guid>
 {
@@ -61,7 +62,7 @@ internal sealed class CreateStockReservationCommandHandler(
         reservationRepository.Add(reservation);
         stockEntryRepository.Update(stockEntry);
 
-        await eventPublisher.PublishAsync(new StockReservationCreatedMessage
+        await eventPublisher.Publish(new StockReservationCreatedMessage
         {
             ReservationId = reservation.Id,
             ReservationNumber = reservation.ReservationNumber,

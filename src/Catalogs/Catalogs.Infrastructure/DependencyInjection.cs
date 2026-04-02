@@ -1,7 +1,7 @@
-using Catalogs.Application.Abstractions.Messaging;
 using Catalogs.Domain.Abstractions.Persistence;
 using Catalogs.Infrastructure.Messaging;
 using Catalogs.Infrastructure.Persistence;
+using Catalogs.Infrastructure.Persistence.Outbox;
 using Catalogs.Infrastructure.Persistence.Repositories;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -26,8 +26,13 @@ public static class DependencyInjection
         string connectionString = configuration.GetConnectionString("CatalogsDb")
             ?? throw new InvalidOperationException("Connection string 'CatalogsDb' is not configured.");
 
-        services.AddDbContext<CatalogsDbContext>(options =>
-            options.UseNpgsql(connectionString));
+        services.AddSingleton<DomainEventsInterceptor>();
+
+        services.AddDbContext<CatalogsDbContext>((sp, options) =>
+        {
+            options.UseNpgsql(connectionString);
+            options.AddInterceptors(sp.GetRequiredService<DomainEventsInterceptor>());
+        });
 
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
@@ -41,24 +46,15 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddScoped<IEventPublisher, EventPublisher>();
-
         services.AddMassTransit(x =>
         {
-            // MassTransit EF Core Outbox — persists messages atomically with domain changes
-            x.AddEntityFrameworkOutbox<CatalogsDbContext>(o =>
-            {
-                o.UsePostgres();
-                o.UseBusOutbox();
-                o.QueryDelay = TimeSpan.FromSeconds(2);
-            });
-
-            x.UsingRabbitMq((context, cfg) =>
+            x.UsingRabbitMq((_, cfg) =>
             {
                 cfg.Host(configuration["RabbitMqSettings:Uri"]);
-                cfg.ConfigureEndpoints(context);
             });
         });
+
+        services.AddHostedService<OutboxDeliveryWorker>();
 
         return services;
     }

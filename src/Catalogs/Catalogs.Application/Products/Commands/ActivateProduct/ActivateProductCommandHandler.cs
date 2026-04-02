@@ -2,14 +2,12 @@ using Catalogs.Application.Abstractions.Messaging;
 using Catalogs.Domain.Abstractions.Persistence;
 using Catalogs.Domain.Products;
 using SharedKernel;
-using SharedKernel.Contracts.Catalogs.Products;
 
 namespace Catalogs.Application.Products.Commands.ActivateProduct;
 
 internal sealed class ActivateProductCommandHandler(
     IProductRepository productRepository,
-    IUnitOfWork unitOfWork,
-    IEventPublisher eventPublisher)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<ActivateProductCommand>
 {
     public async Task<Result> Handle(ActivateProductCommand request, CancellationToken cancellationToken)
@@ -25,13 +23,6 @@ internal sealed class ActivateProductCommandHandler(
             return result;
 
         productRepository.Update(product);
-
-        await eventPublisher.PublishAsync(new ProductActivatedMessage
-        {
-            ProductId = product.Id,
-            Sku = product.Sku.Value,
-            ActivatedAt = product.UpdatedAt
-        }, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

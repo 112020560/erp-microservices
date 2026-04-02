@@ -49,17 +49,8 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddScoped<IEventPublisher, EventPublisher>();
-
         services.AddMassTransit(x =>
         {
-            x.AddEntityFrameworkOutbox<InventoryDbContext>(o =>
-            {
-                o.UsePostgres();
-                o.UseBusOutbox();
-                o.QueryDelay = TimeSpan.FromSeconds(2);
-            });
-
             x.AddConsumer<ProductCreatedConsumer>();
             x.AddConsumer<ProductUpdatedConsumer>();
             x.AddConsumer<ProductDeactivatedConsumer>();
@@ -74,8 +65,6 @@ public static class DependencyInjection
                     e.ConfigureConsumer<ProductUpdatedConsumer>(context);
                     e.ConfigureConsumer<ProductDeactivatedConsumer>(context);
                 });
-
-                cfg.ConfigureEndpoints(context);
             });
         });
 

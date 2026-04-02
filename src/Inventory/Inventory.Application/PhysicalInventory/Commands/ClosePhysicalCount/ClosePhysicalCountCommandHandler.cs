@@ -4,6 +4,7 @@ using Inventory.Domain.Abstractions.Persistence;
 using Inventory.Domain.Abstractions.Services;
 using Inventory.Domain.Movements;
 using Inventory.Domain.PhysicalInventory;
+using MassTransit;
 using SharedKernel;
 using SharedKernel.Contracts.Inventory;
 
@@ -25,7 +26,7 @@ internal sealed class ClosePhysicalCountCommandHandler(
     IStockEntryRepository stockEntryRepository,
     IProductSnapshotRepository productSnapshotRepository,
     IMovementNumberGenerator movementNumberGenerator,
-    IEventPublisher eventPublisher,
+    IPublishEndpoint eventPublisher,
     IUnitOfWork unitOfWork)
     : ICommandHandler<ClosePhysicalCountCommand>
 {
@@ -98,7 +99,7 @@ internal sealed class ClosePhysicalCountCommandHandler(
 
         physicalCountRepository.Update(count);
 
-        await eventPublisher.PublishAsync(new PhysicalInventoryCompletedMessage
+        await eventPublisher.Publish(new PhysicalInventoryCompletedMessage
         {
             CountId = count.Id,
             CountNumber = count.CountNumber,

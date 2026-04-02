@@ -5,6 +5,7 @@ using Inventory.Domain.Abstractions.Services;
 using Inventory.Domain.Catalog;
 using Inventory.Domain.Movements;
 using Inventory.Domain.Stock;
+using MassTransit;
 using SharedKernel;
 
 namespace Inventory.Application.Stock.Commands.TransferStock;
@@ -14,7 +15,7 @@ internal sealed class TransferStockCommandHandler(
     IStockEntryRepository stockEntryRepository,
     IProductSnapshotRepository productSnapshotRepository,
     IMovementNumberGenerator movementNumberGenerator,
-    IEventPublisher eventPublisher,
+    IPublishEndpoint eventPublisher,
     IUnitOfWork unitOfWork)
     : ICommandHandler<TransferStockCommand, string>
 {
@@ -91,7 +92,7 @@ internal sealed class TransferStockCommandHandler(
 
         movementRepository.Add(movement);
 
-        await eventPublisher.PublishAsync(new StockMovementConfirmedMessage
+        await eventPublisher.Publish(new StockMovementConfirmedMessage
         {
             MovementId = movement.Id,
             MovementNumber = movement.MovementNumber,
