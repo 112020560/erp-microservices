@@ -62,9 +62,9 @@ POST {{catalogs}}/products
 Content-Type: application/json
 
 {
-  "sku": "LAPTOP-TECHPRO-007",
-  "name": "Laptop TechPro Prueba 7\"",
-  "description": "Laptop de alto rendimiento para profesionales #7",
+  "sku": "LAPTOP-TECHPRO-008",
+  "name": "Laptop TechPro Prueba 8\"",
+  "description": "Laptop de alto rendimiento para profesionales #8",
   "price": 1299.99,
   "currency": "USD",
   "categoryId": "{{categoryId}}",

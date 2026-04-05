@@ -374,3 +374,7 @@ access_control/.DS_Store
 /access_control/AccessControl.Application/obj/Debug
 /SharedKernel/obj
 /SharedKernel/obj/Debug
+
+# Local development secrets
+**/appsettings.Development.json
+/src/FacturaElectronica/FacturaElectronica.WebApi/documentos-electronicos

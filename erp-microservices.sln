@@ -63,6 +63,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inventory.Infrastructure", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inventory.WebApi", "src\Inventory\Inventory.WebApi\Inventory.WebApi.csproj", "{7A3AB210-2179-4FAD-BF53-51D8A0F5D8AB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ElectronicInvoice", "ElectronicInvoice", "{AF463554-A58A-6339-496B-BF17CA28EC09}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacturaElectronica.WebApi", "src\FacturaElectronica\FacturaElectronica.WebApi\FacturaElectronica.WebApi.csproj", "{8510F94E-1A7C-4D6E-A9AF-B26C935C1561}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacturaElectronica.Aplicacion", "src\FacturaElectronica\FacturaElectronica.Aplicacion\FacturaElectronica.Aplicacion.csproj", "{44BE0E00-ECE6-4DAF-876D-DA175571975C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacturaElectronica.Dominio", "src\FacturaElectronica\FacturaElectronica.Dominio\FacturaElectronica.Dominio.csproj", "{0A4ED600-11AB-4442-AA9E-48B6DBF6C973}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacturaElectronica.Infraestructura", "src\FacturaElectronica\FacturaElectronica.Infraestructura\FacturaElectronica.Infraestructura.csproj", "{E712B9D2-6680-4022-955B-7361F19855C0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -161,6 +171,22 @@ Global
 		{7A3AB210-2179-4FAD-BF53-51D8A0F5D8AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A3AB210-2179-4FAD-BF53-51D8A0F5D8AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7A3AB210-2179-4FAD-BF53-51D8A0F5D8AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8510F94E-1A7C-4D6E-A9AF-B26C935C1561}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8510F94E-1A7C-4D6E-A9AF-B26C935C1561}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8510F94E-1A7C-4D6E-A9AF-B26C935C1561}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8510F94E-1A7C-4D6E-A9AF-B26C935C1561}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44BE0E00-ECE6-4DAF-876D-DA175571975C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44BE0E00-ECE6-4DAF-876D-DA175571975C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44BE0E00-ECE6-4DAF-876D-DA175571975C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44BE0E00-ECE6-4DAF-876D-DA175571975C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A4ED600-11AB-4442-AA9E-48B6DBF6C973}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A4ED600-11AB-4442-AA9E-48B6DBF6C973}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A4ED600-11AB-4442-AA9E-48B6DBF6C973}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A4ED600-11AB-4442-AA9E-48B6DBF6C973}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E712B9D2-6680-4022-955B-7361F19855C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E712B9D2-6680-4022-955B-7361F19855C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E712B9D2-6680-4022-955B-7361F19855C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E712B9D2-6680-4022-955B-7361F19855C0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -195,5 +221,10 @@ Global
 		{51946BDD-88AE-4D21-98BD-7322778F64A8} = {AACE29CD-2783-8F54-77D0-546133834419}
 		{89E98D71-1317-4E9C-8A7A-BC5446850422} = {AACE29CD-2783-8F54-77D0-546133834419}
 		{7A3AB210-2179-4FAD-BF53-51D8A0F5D8AB} = {AACE29CD-2783-8F54-77D0-546133834419}
+		{AF463554-A58A-6339-496B-BF17CA28EC09} = {B25487A7-28D1-4DA2-9DE4-B30A6F465A0C}
+		{8510F94E-1A7C-4D6E-A9AF-B26C935C1561} = {AF463554-A58A-6339-496B-BF17CA28EC09}
+		{44BE0E00-ECE6-4DAF-876D-DA175571975C} = {AF463554-A58A-6339-496B-BF17CA28EC09}
+		{0A4ED600-11AB-4442-AA9E-48B6DBF6C973} = {AF463554-A58A-6339-496B-BF17CA28EC09}
+		{E712B9D2-6680-4022-955B-7361F19855C0} = {AF463554-A58A-6339-496B-BF17CA28EC09}
 	EndGlobalSection
 EndGlobal
