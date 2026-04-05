@@ -41,6 +41,7 @@ public static class DependencyInjection
         services.AddScoped<IProductSnapshotRepository, ProductSnapshotRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IMovementNumberGenerator, MovementNumberGenerator>();
+        services.AddScoped<IPosStockSearchRepository, PosStockSearchRepository>();
 
         return services;
     }
