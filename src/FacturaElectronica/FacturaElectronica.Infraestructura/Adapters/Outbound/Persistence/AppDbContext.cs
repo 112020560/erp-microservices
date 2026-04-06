@@ -13,6 +13,9 @@ public class AppDbContext : DbContext
     public DbSet<TenantCertificateConfig> TenantCertificateConfigs => Set<TenantCertificateConfig>();
     public DbSet<TenantHaciendaConfig> TenantHaciendaConfigs => Set<TenantHaciendaConfig>();
 
+    // Notifications
+    public DbSet<TenantNotificationConfig> TenantNotificationConfigs => Set<TenantNotificationConfig>();
+
     // Invoicing
     public DbSet<ElectronicInvoice> ElectronicDocuments => Set<ElectronicInvoice>();
     public DbSet<ElectronicDocumentLog> ElectronicDocumentLogs => Set<ElectronicDocumentLog>();
@@ -35,6 +38,7 @@ public class AppDbContext : DbContext
             e.HasOne(x => x.EmitterConfig).WithOne(x => x.Tenant).HasForeignKey<TenantEmitterConfig>(x => x.TenantId);
             e.HasOne(x => x.CertificateConfig).WithOne(x => x.Tenant).HasForeignKey<TenantCertificateConfig>(x => x.TenantId);
             e.HasOne(x => x.HaciendaConfig).WithOne(x => x.Tenant).HasForeignKey<TenantHaciendaConfig>(x => x.TenantId);
+            e.HasOne(x => x.NotificationConfig).WithOne(x => x.Tenant).HasForeignKey<TenantNotificationConfig>(x => x.TenantId);
         });
 
         modelBuilder.Entity<TenantEmitterConfig>(e =>
@@ -88,6 +92,22 @@ public class AppDbContext : DbContext
             e.Property(x => x.QueryUrl).HasColumnName("query_url").HasMaxLength(500).IsRequired();
             e.Property(x => x.MaxRetries).HasColumnName("max_retries").HasDefaultValue(3);
             e.Property(x => x.CallbackUrl).HasColumnName("callback_url").HasMaxLength(500);
+            e.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+            e.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
+            e.HasIndex(x => x.TenantId).IsUnique();
+        });
+
+        modelBuilder.Entity<TenantNotificationConfig>(e =>
+        {
+            e.ToTable("tenant_notification_configs", "tenants");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
+            e.Property(x => x.TenantId).HasColumnName("tenant_id").IsRequired();
+            e.Property(x => x.Channel).HasColumnName("channel").HasDefaultValue(NotificationChannel.Webhook);
+            e.Property(x => x.WebhookUrl).HasColumnName("webhook_url").HasMaxLength(500);
+            e.Property(x => x.WebhookSecret).HasColumnName("webhook_secret").HasMaxLength(255);
+            e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            e.Property(x => x.SubscribedEvents).HasColumnName("subscribed_events").HasMaxLength(500).HasDefaultValue("document.processed");
             e.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
             e.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
             e.HasIndex(x => x.TenantId).IsUnique();

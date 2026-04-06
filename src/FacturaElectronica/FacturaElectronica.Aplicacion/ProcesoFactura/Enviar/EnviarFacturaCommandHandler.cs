@@ -1,4 +1,5 @@
 using FacturaElectronica.Aplicacion.Wrappers;
+using FacturaElectronica.Dominio.Abstracciones.Adapters.Outbond;
 using FacturaElectronica.Dominio.Abstracciones.Adapters.Outbond.Persistence;
 using FacturaElectronica.Dominio.Abstracciones.Adapters.Outbond.Storage;
 using FacturaElectronica.Dominio.Abstracciones.Adapters.Outbond.Web;
@@ -37,6 +38,8 @@ public class EnviarFacturaCommandHandler : IRequestHandler<EnviarFacturaCommand,
     private readonly IServicioAlmacenamientoDocumentos _storage;
     private readonly ICertificadoProvider _certificadoProvider;
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly IWebhookDispatcherService _webhookDispatcher;
+    private readonly ITenantNotificationConfigRepository _notificationConfigRepository;
 
     public EnviarFacturaCommandHandler(
         ILogger<EnviarFacturaCommandHandler> logger,
@@ -51,7 +54,9 @@ public class EnviarFacturaCommandHandler : IRequestHandler<EnviarFacturaCommand,
         IServicioAlmacenamientoDocumentos storage,
         IOptions<ConfiguracionFacturaElectronica> options,
         ICertificadoProvider certificadoProvider,
-        IPublishEndpoint publishEndpoint)
+        IPublishEndpoint publishEndpoint,
+        IWebhookDispatcherService webhookDispatcher,
+        ITenantNotificationConfigRepository notificationConfigRepository)
     {
         _logger = logger;
         _generadorClave = generadorClave;
@@ -66,6 +71,8 @@ public class EnviarFacturaCommandHandler : IRequestHandler<EnviarFacturaCommand,
         _storage = storage;
         _certificadoProvider = certificadoProvider;
         _publishEndpoint = publishEndpoint;
+        _webhookDispatcher = webhookDispatcher;
+        _notificationConfigRepository = notificationConfigRepository;
     }
 
     public async Task<ResultadoFacturaElectronica> Handle(EnviarFacturaCommand request, CancellationToken cancellationToken)
@@ -221,20 +228,44 @@ public class EnviarFacturaCommandHandler : IRequestHandler<EnviarFacturaCommand,
             // 17. Actualizar registro en BD
             await ActualizarRegistroConRespuesta(registroDocumento, respuestaHacienda, resultadoValidacion, cancellationToken);
 
-            // 18. Publicar evento de dominio vía MassTransit
-            await _publishEndpoint.Publish(new ElectronicDocumentProcessedEvent
+            // 18. Load notification config and route accordingly
+            var notificationConfig = await _notificationConfigRepository.GetByTenantIdAsync(
+                request.Factura.TenantId, cancellationToken);
+
+            var channel = notificationConfig?.Channel ?? NotificationChannel.None;
+
+            if (channel.HasFlag(NotificationChannel.RabbitMq))
             {
-                TenantId = request.Factura.TenantId,
-                DocumentId = registroDocumento.Id,
-                ExternalDocumentId = request.Factura.ExternalDocumentId,
-                DocumentType = facturaModel.TipoDocumento ?? string.Empty,
-                Status = DeterminarEstado(respuestaHacienda),
-                Clave = clave,
-                Consecutivo = numeroConsecutivo,
-                ResponseMessage = respuestaHacienda.IndicadorEstado,
-                Error = null,
-                ProcessedAt = DateTime.UtcNow
-            }, cancellationToken);
+                await _publishEndpoint.Publish(new ElectronicDocumentProcessedEvent
+                {
+                    TenantId = request.Factura.TenantId,
+                    DocumentId = registroDocumento.Id,
+                    ExternalDocumentId = request.Factura.ExternalDocumentId,
+                    DocumentType = facturaModel.TipoDocumento ?? string.Empty,
+                    Status = DeterminarEstado(respuestaHacienda),
+                    Clave = clave,
+                    Consecutivo = numeroConsecutivo,
+                    ResponseMessage = respuestaHacienda.IndicadorEstado,
+                    Error = null,
+                    ProcessedAt = DateTime.UtcNow
+                }, cancellationToken);
+            }
+
+            // Webhook is handled internally by the dispatcher (checks config.Channel)
+            await _webhookDispatcher.DispatchAsync(
+                request.Factura.TenantId,
+                "document.processed",
+                new
+                {
+                    DocumentId = registroDocumento.Id,
+                    ExternalDocumentId = request.Factura.ExternalDocumentId,
+                    DocumentType = facturaModel.TipoDocumento,
+                    Status = DeterminarEstado(respuestaHacienda),
+                    Clave = clave,
+                    Consecutivo = numeroConsecutivo,
+                    ProcessedAt = DateTime.UtcNow
+                },
+                cancellationToken);
 
             _logger.LogInformation("Factura {ConsecutivoDocumento} procesada exitosamente con clave {Clave}. Estado Hacienda: {Estado}",
                 facturaModel.ConsecutivoDocumento, clave, respuestaHacienda.IndicadorEstado);
@@ -258,21 +289,27 @@ public class EnviarFacturaCommandHandler : IRequestHandler<EnviarFacturaCommand,
         {
             _logger.LogError(ex, "Error procesando factura {ConsecutivoDocumento}", request.Factura.ConsecutivoDocumento);
 
-            // Publicar evento de error si el registro fue creado
             if (registroDocumento is not null)
             {
                 try
                 {
-                    await _publishEndpoint.Publish(new ElectronicDocumentProcessedEvent
+                    var errorConfig = await _notificationConfigRepository.GetByTenantIdAsync(
+                        request.Factura.TenantId, cancellationToken);
+                    var errorChannel = errorConfig?.Channel ?? NotificationChannel.None;
+
+                    if (errorChannel.HasFlag(NotificationChannel.RabbitMq))
                     {
-                        TenantId = request.Factura.TenantId,
-                        DocumentId = registroDocumento.Id,
-                        ExternalDocumentId = request.Factura.ExternalDocumentId,
-                        DocumentType = request.Factura.TipoDocumento ?? string.Empty,
-                        Status = "error",
-                        Error = ex.Message,
-                        ProcessedAt = DateTime.UtcNow
-                    }, cancellationToken);
+                        await _publishEndpoint.Publish(new ElectronicDocumentProcessedEvent
+                        {
+                            TenantId = request.Factura.TenantId,
+                            DocumentId = registroDocumento.Id,
+                            ExternalDocumentId = request.Factura.ExternalDocumentId,
+                            DocumentType = request.Factura.TipoDocumento ?? string.Empty,
+                            Status = "error",
+                            Error = ex.Message,
+                            ProcessedAt = DateTime.UtcNow
+                        }, cancellationToken);
+                    }
                 }
                 catch (Exception publishEx)
                 {

@@ -505,6 +505,68 @@ namespace FacturaElectronica.Infraestructura.Migrations.EF
                     b.ToTable("tenant_hacienda_config", "tenants");
                 });
 
+            modelBuilder.Entity("FacturaElectronica.Dominio.Entidades.TenantNotificationConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<int>("Channel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(2)
+                        .HasColumnName("channel");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("SubscribedEvents")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasDefaultValue("document.processed")
+                        .HasColumnName("subscribed_events");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("WebhookSecret")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("webhook_secret");
+
+                    b.Property<string>("WebhookUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("webhook_url");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId")
+                        .IsUnique();
+
+                    b.ToTable("tenant_notification_configs", "tenants");
+                });
+
             modelBuilder.Entity("FacturaElectronica.Dominio.Entidades.ElectronicDocumentLog", b =>
                 {
                     b.HasOne("FacturaElectronica.Dominio.Entidades.ElectronicInvoice", null)
@@ -547,6 +609,17 @@ namespace FacturaElectronica.Infraestructura.Migrations.EF
                     b.Navigation("Tenant");
                 });
 
+            modelBuilder.Entity("FacturaElectronica.Dominio.Entidades.TenantNotificationConfig", b =>
+                {
+                    b.HasOne("FacturaElectronica.Dominio.Entidades.Tenant", "Tenant")
+                        .WithOne("NotificationConfig")
+                        .HasForeignKey("FacturaElectronica.Dominio.Entidades.TenantNotificationConfig", "TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("FacturaElectronica.Dominio.Entidades.ElectronicInvoice", b =>
                 {
                     b.Navigation("Logs");
@@ -559,6 +632,8 @@ namespace FacturaElectronica.Infraestructura.Migrations.EF
                     b.Navigation("EmitterConfig");
 
                     b.Navigation("HaciendaConfig");
+
+                    b.Navigation("NotificationConfig");
                 });
 #pragma warning restore 612, 618
         }

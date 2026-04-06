@@ -56,6 +56,11 @@ public static class DependencyInjection
             x.AddConsumer<ProductUpdatedConsumer>();
             x.AddConsumer<ProductDeactivatedConsumer>();
 
+            x.AddConsumer<SaleQuoteCreatedConsumer>();
+            x.AddConsumer<SaleQuoteCancelledConsumer>();
+            x.AddConsumer<SaleQuoteExpiredConsumer>();
+            x.AddConsumer<SaleInvoiceConfirmedConsumer>();
+
             x.UsingRabbitMq((context, cfg) =>
             {
                 cfg.Host(configuration["RabbitMqSettings:Uri"]);
@@ -65,6 +70,14 @@ public static class DependencyInjection
                     e.ConfigureConsumer<ProductCreatedConsumer>(context);
                     e.ConfigureConsumer<ProductUpdatedConsumer>(context);
                     e.ConfigureConsumer<ProductDeactivatedConsumer>(context);
+                });
+
+                cfg.ReceiveEndpoint("inventory-sales-events", e =>
+                {
+                    e.ConfigureConsumer<SaleQuoteCreatedConsumer>(context);
+                    e.ConfigureConsumer<SaleQuoteCancelledConsumer>(context);
+                    e.ConfigureConsumer<SaleQuoteExpiredConsumer>(context);
+                    e.ConfigureConsumer<SaleInvoiceConfirmedConsumer>(context);
                 });
             });
         });

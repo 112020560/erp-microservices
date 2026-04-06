@@ -20,6 +20,7 @@ public static class DependencyInjection
             // Registrar los consumers
             x.AddConsumer<FacturaElectronicaConsumer>();
             x.AddConsumer<NotaCreditoElectronicaConsumer>();
+            x.AddConsumer<SaleInvoiceConfirmedConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -35,6 +36,12 @@ public static class DependencyInjection
                 cfg.ReceiveEndpoint("nota-credito-electronica-queue", e =>
                 {
                     e.ConfigureConsumer<NotaCreditoElectronicaConsumer>(context);
+                });
+
+                // Configurar el endpoint para facturas confirmadas desde Sales
+                cfg.ReceiveEndpoint("factura-electronica-sales-queue", e =>
+                {
+                    e.ConfigureConsumer<SaleInvoiceConfirmedConsumer>(context);
                 });
             });
         });

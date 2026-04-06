@@ -14,4 +14,5 @@ public class Tenant
     public TenantEmitterConfig? EmitterConfig { get; set; }
     public TenantCertificateConfig? CertificateConfig { get; set; }
     public TenantHaciendaConfig? HaciendaConfig { get; set; }
+    public TenantNotificationConfig? NotificationConfig { get; set; }
 }

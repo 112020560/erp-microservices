@@ -1,7 +1,9 @@
+using FacturaElectronica.Dominio.Abstracciones.Adapters.Outbond;
 using FacturaElectronica.Dominio.Abstracciones.Adapters.Outbond.Persistence;
 using FacturaElectronica.Dominio.Abstracciones.Services;
 using FacturaElectronica.Infraestructura.Adapters.Outbound.Persistence.Repositorios;
 using FacturaElectronica.Infraestructura.Services;
+using FacturaElectronica.Infraestructura.Webhook;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,12 +39,17 @@ public static class DependencyInjection
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<ITenantCertificateRepository, TenantCertificateRepository>();
         services.AddScoped<ITenantHaciendaConfigRepository, TenantHaciendaConfigRepository>();
+        services.AddScoped<ITenantNotificationConfigRepository, TenantNotificationConfigRepository>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Certificate and encryption services
         services.AddSingleton<IEncryptionService, AesEncryptionService>();
         services.AddScoped<ICertificadoProvider, CertificadoProvider>();
+
+        // Webhook dispatcher
+        services.AddHttpClient("webhook").ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(30));
+        services.AddScoped<IWebhookDispatcherService, WebhookDispatcherService>();
 
         return services;
     }

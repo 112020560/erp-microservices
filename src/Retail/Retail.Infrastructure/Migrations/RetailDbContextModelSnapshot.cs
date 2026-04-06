@@ -638,6 +638,292 @@ namespace Retail.Infrastructure.Migrations
                     b.ToTable("scheduled_price_changes", (string)null);
                 });
 
+            modelBuilder.Entity("Retail.Domain.Sales.AppliedPromotion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("discount_amount");
+
+                    b.Property<Guid>("PromotionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("promotion_id");
+
+                    b.Property<string>("PromotionName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("promotion_name");
+
+                    b.Property<Guid>("QuoteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("quote_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuoteId")
+                        .HasDatabaseName("ix_applied_promotions_quote_id");
+
+                    b.ToTable("applied_promotions", (string)null);
+                });
+
+            modelBuilder.Entity("Retail.Domain.Sales.PaymentLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("amount");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<int>("Method")
+                        .HasColumnType("integer")
+                        .HasColumnName("method");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("reference");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId")
+                        .HasDatabaseName("ix_payment_lines_invoice_id");
+
+                    b.ToTable("payment_lines", (string)null);
+                });
+
+            modelBuilder.Entity("Retail.Domain.Sales.SaleInvoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CashierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("cashier_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("ElectronicDocumentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("electronic_document_id");
+
+                    b.Property<string>("InvoiceNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("invoice_number");
+
+                    b.Property<Guid>("QuoteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("quote_id");
+
+                    b.Property<bool>("RequiresElectronicInvoice")
+                        .HasColumnType("boolean")
+                        .HasColumnName("requires_electronic_invoice");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("total");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("sale_invoices", (string)null);
+                });
+
+            modelBuilder.Entity("Retail.Domain.Sales.SaleQuote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Channel")
+                        .HasColumnType("integer")
+                        .HasColumnName("channel");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("customer_name");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<decimal>("PromotionDiscountAmount")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("promotion_discount_amount");
+
+                    b.Property<string>("QuoteNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("quote_number");
+
+                    b.Property<Guid>("SalesPersonId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sales_person_id");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("subtotal");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("tax_amount");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("total");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<DateTimeOffset>("ValidUntil")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("valid_until");
+
+                    b.Property<decimal>("VolumeDiscountAmount")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("volume_discount_amount");
+
+                    b.Property<Guid>("WarehouseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("warehouse_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("ix_sale_quotes_customer_id");
+
+                    b.HasIndex("SalesPersonId")
+                        .HasDatabaseName("ix_sale_quotes_sales_person_id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_sale_quotes_status");
+
+                    b.HasIndex("ValidUntil")
+                        .HasDatabaseName("ix_sale_quotes_valid_until");
+
+                    b.ToTable("sale_quotes", (string)null);
+                });
+
+            modelBuilder.Entity("Retail.Domain.Sales.SaleQuoteLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("category_id");
+
+                    b.Property<decimal>("DiscountPercentage")
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("discount_percentage");
+
+                    b.Property<decimal>("LineTotal")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("line_total");
+
+                    b.Property<string>("PriceListName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("price_list_name");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("product_name");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity");
+
+                    b.Property<Guid>("QuoteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("quote_id");
+
+                    b.Property<string>("ResolutionSource")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("resolution_source");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("sku");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("unit_price");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuoteId")
+                        .HasDatabaseName("ix_sale_quote_lines_quote_id");
+
+                    b.ToTable("sale_quote_lines", (string)null);
+                });
+
+            modelBuilder.Entity("Retail.Infrastructure.Persistence.NumberSequence", b =>
+                {
+                    b.Property<string>("SequenceName")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("sequence_name");
+
+                    b.Property<long>("CurrentValue")
+                        .HasColumnType("bigint")
+                        .HasColumnName("current_value");
+
+                    b.HasKey("SequenceName");
+
+                    b.ToTable("number_sequences", (string)null);
+                });
+
             modelBuilder.Entity("Retail.Domain.Pricing.CustomerGroupMember", b =>
                 {
                     b.HasOne("Retail.Domain.Pricing.CustomerGroup", null)
@@ -692,6 +978,33 @@ namespace Retail.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Retail.Domain.Sales.AppliedPromotion", b =>
+                {
+                    b.HasOne("Retail.Domain.Sales.SaleQuote", null)
+                        .WithMany("AppliedPromotions")
+                        .HasForeignKey("QuoteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Retail.Domain.Sales.PaymentLine", b =>
+                {
+                    b.HasOne("Retail.Domain.Sales.SaleInvoice", null)
+                        .WithMany("Payments")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Retail.Domain.Sales.SaleQuoteLine", b =>
+                {
+                    b.HasOne("Retail.Domain.Sales.SaleQuote", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("QuoteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Retail.Domain.Pricing.CustomerGroup", b =>
                 {
                     b.Navigation("Members");
@@ -711,6 +1024,18 @@ namespace Retail.Infrastructure.Migrations
                     b.Navigation("Conditions");
 
                     b.Navigation("Usages");
+                });
+
+            modelBuilder.Entity("Retail.Domain.Sales.SaleInvoice", b =>
+                {
+                    b.Navigation("Payments");
+                });
+
+            modelBuilder.Entity("Retail.Domain.Sales.SaleQuote", b =>
+                {
+                    b.Navigation("AppliedPromotions");
+
+                    b.Navigation("Lines");
                 });
 #pragma warning restore 612, 618
         }
