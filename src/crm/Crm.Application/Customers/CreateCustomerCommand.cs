@@ -47,7 +47,11 @@ internal sealed class CreateCustomerCommandHandler : ICommandHandler<CreateCusto
             Metadata = null
         };
 
-        await _mqProducerService.SendCommand<CustomerCreated>(contract, "credit-service-customer-events", Guid.NewGuid().ToString("N"),cancellationToken);
+        // Send to credit service queue (point-to-point)
+        await _mqProducerService.SendCommand<CustomerCreated>(contract, "credit-service-customer-events", Guid.NewGuid().ToString("N"), cancellationToken);
+
+        // Broadcast publish so other services (Retail, etc.) can subscribe
+        await _mqProducerService.PublishEvent(contract, Guid.NewGuid().ToString("N"), cancellationToken);
 
         return new CustomerSummaryDto(customer.Id, customer.FullName, customer.DisplayName ?? string.Empty, customer.IdentificationNumber ?? string.Empty);
 

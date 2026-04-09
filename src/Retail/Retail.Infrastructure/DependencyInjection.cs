@@ -2,6 +2,7 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Retail.Application.Abstractions.Services;
 using Retail.Domain.Pricing.Abstractions;
 using Retail.Domain.Sales.Abstractions;
 using Retail.Infrastructure.Messaging.Consumers;
@@ -17,7 +18,9 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration)
-        => services.AddPersistence(configuration).AddMessaging(configuration);
+        => services.AddPersistence(configuration)
+                   .AddHttpClients(configuration)
+                   .AddMessaging(configuration);
 
     private static IServiceCollection AddPersistence(
         this IServiceCollection services,
@@ -43,6 +46,21 @@ public static class DependencyInjection
 
         services.AddHostedService<ScheduledPriceChangeApplierService>();
         services.AddHostedService<ExpiredQuoteReleaseService>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddHttpClients(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var creditServiceBaseUrl = configuration["CreditServiceBaseUrl"]
+            ?? throw new InvalidOperationException("'CreditServiceBaseUrl' is not configured.");
+
+        services.AddHttpClient<ICreditServiceClient, CreditServiceClient>(client =>
+        {
+            client.BaseAddress = new Uri(creditServiceBaseUrl);
+        });
 
         return services;
     }

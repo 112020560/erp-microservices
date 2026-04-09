@@ -20,7 +20,8 @@ internal sealed class CreateSaleInvoiceEndpoint : IEndpoint
                 request.CashierId,
                 request.RequiresElectronicInvoice,
                 request.TenantId,
-                request.Payments.Select(p => new CreatePaymentLineDto(p.Method, p.Amount, p.Reference)).ToList());
+                request.Payments.Select(p => new CreatePaymentLineDto(p.Method, p.Amount, p.Reference)).ToList(),
+                request.CreditProductId);
 
             var result = await mediator.Send(command, cancellationToken);
             return result.IsSuccess
@@ -41,6 +42,7 @@ public sealed record CreateSaleInvoiceRequest(
     Guid CashierId,
     bool RequiresElectronicInvoice,
     Guid? TenantId,
-    IReadOnlyList<CreatePaymentLineRequest> Payments);
+    IReadOnlyList<CreatePaymentLineRequest> Payments,
+    Guid? CreditProductId = null);
 
 public sealed record CreatePaymentLineRequest(PaymentMethod Method, decimal Amount, string? Reference);

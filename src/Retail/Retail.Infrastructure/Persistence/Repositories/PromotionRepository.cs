@@ -32,6 +32,12 @@ internal sealed class PromotionRepository(RetailDbContext context) : IPromotionR
                 && (p.ValidTo == null || p.ValidTo >= at))
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<Promotion>> GetByIdsWithUsagesAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+        => await context.Promotions
+            .Include(p => p.Usages)
+            .Where(p => ids.Contains(p.Id))
+            .ToListAsync(ct);
+
     public async Task<IReadOnlyList<Promotion>> GetAllAsync(bool? isActive = null, CancellationToken ct = default)
     {
         var query = context.Promotions

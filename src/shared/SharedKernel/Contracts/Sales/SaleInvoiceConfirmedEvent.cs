@@ -14,6 +14,12 @@ public record SaleInvoiceConfirmedEvent
     public decimal Total { get; init; }
     public string Currency { get; init; } = string.Empty;
     public DateTimeOffset ConfirmedAt { get; init; }
+
+    /// <summary>Amount financed on credit (0 if no credit payment).</summary>
+    public decimal CreditAmount { get; init; }
+
+    /// <summary>Credit product to use for the credit line (null if no credit payment).</summary>
+    public Guid? CreditProductId { get; init; }
 }
 
 public record SaleInvoiceLineContract(

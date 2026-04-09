@@ -8,6 +8,7 @@ public sealed record CreateSaleInvoiceCommand(
     Guid CashierId,
     bool RequiresElectronicInvoice,
     Guid? TenantId,
-    IReadOnlyList<CreatePaymentLineDto> Payments) : ICommand<Guid>;
+    IReadOnlyList<CreatePaymentLineDto> Payments,
+    Guid? CreditProductId = null) : ICommand<Guid>;
 
 public sealed record CreatePaymentLineDto(PaymentMethod Method, decimal Amount, string? Reference);

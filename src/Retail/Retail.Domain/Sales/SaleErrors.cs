@@ -16,4 +16,7 @@ public static class SaleErrors
     public static readonly Error InvalidQuantity = Error.Failure("Sale.InvalidQuantity", "Quantity must be greater than zero.");
     public static readonly Error InvalidPrice = Error.Failure("Sale.InvalidPrice", "Unit price cannot be negative.");
     public static readonly Error InvalidValidUntil = Error.Failure("Sale.InvalidValidUntil", "ValidUntil must be in the future.");
+    public static readonly Error CreditRequiresCustomer = Error.Failure("Sale.CreditRequiresCustomer", "A credit payment requires an identified customer.");
+    public static readonly Error CustomerNotInCreditSystem = Error.Failure("Sale.CustomerNotInCreditSystem", "Customer is not registered in the credit system.");
+    public static readonly Error CreditServiceUnavailable = Error.Failure("Sale.CreditServiceUnavailable", "Credit service is unavailable. Cannot process credit payment.");
 }
