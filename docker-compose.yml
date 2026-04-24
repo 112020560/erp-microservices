@@ -1,12 +1,170 @@
 version: "3.9"
 
 # Infraestructura local para desarrollo del ERP
-# Los microservicios corren con "dotnet run" y se conectan a:
-#   - RabbitMQ: localhost:5672
-#   - Seq:      localhost:5341
-#   - PostgreSQL: Railway (externo, ver appsettings.Development.json)
+# Modo 1 — solo infra (recomendado para desarrollo):
+#   docker compose up rabbitmq seq jaeger
+#   Los microservicios corren con "dotnet run" y se conectan a localhost
+#
+# Modo 2 — stack completo:
+#   docker compose up --build
+#   Todos los servicios corren en contenedores y se comunican entre sí
+
+x-telemetry: &telemetry
+  Telemetry__OtlpEndpoint: "http://jaeger:4317"
+
+x-serilog: &serilog
+  Serilog__WriteTo__1__Name: "Seq"
+  Serilog__WriteTo__1__Args__serverUrl: "http://seq:5341"
+
+x-rabbitmq: &rabbitmq
+  RabbitMqSettings__Uri: "amqp://admin:Abc..123@rabbitmq:5672/smart-core"
+
+# Red de Keycloak: usa nombre de contenedor "keycloak" y puerto interno 8080
+# (externamente expuesto en localhost:8082, pero dentro de Docker es :8080)
+x-keycloak: &keycloak
+  Keycloak__Authority: "http://keycloak:8080/auth/realms/erp"
+  Keycloak__Audience: "account"
+
+# Todas las redes a las que se conectan los servicios
+x-networks: &service-networks
+  networks:
+    - erp
+    - keycloack_default
 
 services:
+
+  catalogs.webapi:
+    image: catalogs.webapi
+    build:
+      context: .
+      dockerfile: src/Catalogs/Catalogs.WebApi/Dockerfile
+    ports:
+      - "5181:8080"
+    environment:
+      <<: [*telemetry, *serilog, *rabbitmq, *keycloak]
+      ASPNETCORE_ENVIRONMENT: Development
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      seq:      { condition: service_started }
+      jaeger:   { condition: service_started }
+    networks:
+      - erp
+      - keycloack_default
+
+  creditsystem.api:
+    image: creditsystem.api
+    build:
+      context: .
+      dockerfile: src/credit_system/CreditSystem.Api/Dockerfile
+    ports:
+      - "5041:8080"
+    environment:
+      <<: [*telemetry, *serilog, *rabbitmq, *keycloak]
+      ASPNETCORE_ENVIRONMENT: Development
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      seq:      { condition: service_started }
+      jaeger:   { condition: service_started }
+    networks:
+      - erp
+      - keycloack_default
+
+  crm.webapi:
+    image: crm.webapi
+    build:
+      context: .
+      dockerfile: src/crm/Crm.WebApi/Dockerfile
+    ports:
+      - "5156:8080"
+    environment:
+      <<: [*telemetry, *serilog, *rabbitmq, *keycloak]
+      ASPNETCORE_ENVIRONMENT: Development
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      seq:      { condition: service_started }
+      jaeger:   { condition: service_started }
+    networks:
+      - erp
+      - keycloack_default
+
+  facturaelectronica.webapi:
+    image: facturaelectronica.webapi
+    build:
+      context: .
+      dockerfile: src/FacturaElectronica/FacturaElectronica.WebApi/Dockerfile
+    ports:
+      - "5176:8080"
+    environment:
+      <<: [*telemetry, *serilog, *rabbitmq, *keycloak]
+      ASPNETCORE_ENVIRONMENT: Development
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      seq:      { condition: service_started }
+      jaeger:   { condition: service_started }
+    networks:
+      - erp
+      - keycloack_default
+
+  inventory.webapi:
+    image: inventory.webapi
+    build:
+      context: .
+      dockerfile: src/Inventory/Inventory.WebApi/Dockerfile
+    ports:
+      - "5010:8080"
+    environment:
+      <<: [*telemetry, *serilog, *rabbitmq, *keycloak]
+      ASPNETCORE_ENVIRONMENT: Development
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      seq:      { condition: service_started }
+      jaeger:   { condition: service_started }
+    networks:
+      - erp
+      - keycloack_default
+
+  retail.webapi:
+    image: retail.webapi
+    build:
+      context: .
+      dockerfile: src/Retail/Retail.WebApi/Dockerfile
+    ports:
+      - "5236:8080"
+    environment:
+      <<: [*telemetry, *serilog, *rabbitmq, *keycloak]
+      ASPNETCORE_ENVIRONMENT: Development
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      seq:      { condition: service_started }
+      jaeger:   { condition: service_started }
+    networks:
+      - erp
+      - keycloack_default
+
+  apigateway:
+    image: apigateway
+    build:
+      context: .
+      dockerfile: src/ApiGateway/Dockerfile
+    ports:
+      - "5000:8080"
+    environment:
+      <<: [*telemetry, *serilog, *keycloak]
+      ASPNETCORE_ENVIRONMENT: Development
+      Keycloak__Enabled: "true"
+      # Clusters: apuntar a los servicios por nombre de contenedor
+      ReverseProxy__Clusters__retail__Destinations__retail/primary__Address: "http://retail.webapi:8080"
+      ReverseProxy__Clusters__catalogs__Destinations__catalogs/primary__Address: "http://catalogs.webapi:8080"
+      ReverseProxy__Clusters__inventory__Destinations__inventory/primary__Address: "http://inventory.webapi:8080"
+      ReverseProxy__Clusters__crm__Destinations__crm/primary__Address: "http://crm.webapi:8080"
+      ReverseProxy__Clusters__credit__Destinations__credit/primary__Address: "http://creditsystem.api:8080"
+      ReverseProxy__Clusters__factura__Destinations__factura/primary__Address: "http://facturaelectronica.webapi:8080"
+    depends_on:
+      seq:    { condition: service_started }
+      jaeger: { condition: service_started }
+    networks:
+      - erp
+      - keycloack_default
 
   # ─── Mensajería ───────────────────────────────────────────────
   rabbitmq:
@@ -26,6 +184,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - erp
 
   # ─── Logs estructurados ───────────────────────────────────────
   seq:
@@ -38,7 +198,35 @@ services:
       ACCEPT_EULA: Y
     volumes:
       - seq_data:/data
+    networks:
+      - erp
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: erp-jaeger
+    environment:
+      - SPAN_STORAGE_TYPE=badger
+      - BADGER_DIRECTORY_VALUE=/data/values
+      - BADGER_DIRECTORY_KEY=/data/keys
+    ports:
+      - "16686:16686"  # UI → http://localhost:16686
+      - "4317:4317"    # OTLP gRPC
+    volumes:
+      - jaeger_data:/data
+    networks:
+      - erp
 
 volumes:
   rabbitmq_data:
   seq_data:
+  jaeger_data:
+
+networks:
+  # Red interna del ERP (todos los servicios de este compose)
+  erp:
+    driver: bridge
+
+  # Red externa donde corre Keycloak (creada por su propio compose)
+  # Permite llegar al contenedor "keycloak" por nombre → http://keycloak:8080
+  keycloack_default:
+    external: true

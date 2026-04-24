@@ -28,6 +28,7 @@
       <ProjectReference Include="..\FacturaElectronica.Aplicacion\FacturaElectronica.Aplicacion.csproj" />
       <ProjectReference Include="..\FacturaElectronica.Dominio\FacturaElectronica.Dominio.csproj" />
       <ProjectReference Include="..\FacturaElectronica.Infraestructura\FacturaElectronica.Infraestructura.csproj" />
+      <ProjectReference Include="..\..\shared\SmartCore.Telemetry\SmartCore.Telemetry.csproj" />
     </ItemGroup>
 
     <ItemGroup>

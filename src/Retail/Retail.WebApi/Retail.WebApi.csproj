@@ -3,6 +3,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Asp.Versioning.Http" Version="8.1.0" />
@@ -22,5 +23,11 @@
   <ItemGroup>
     <ProjectReference Include="..\Retail.Application\Retail.Application.csproj" />
     <ProjectReference Include="..\Retail.Infrastructure\Retail.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\shared\SmartCore.Telemetry\SmartCore.Telemetry.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\..\.dockerignore">
+      <Link>.dockerignore</Link>
+    </Content>
   </ItemGroup>
 </Project>

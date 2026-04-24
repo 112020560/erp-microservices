@@ -13,12 +13,11 @@ builder.Host.UseSerilog((context, loggerConfig) => loggerConfig.ReadFrom.Configu
 
 builder.Services.AddSmartCoreTelemetry(options =>
 {
-    options.ServiceName = "credit-service";
+    options.ServiceName = "crm-service";
     options.Version = "1.0.0";
     options.Environment = builder.Environment.EnvironmentName;
 
-    // Jaeger local
-    options.OtlpEndpoint = "http://localhost:4317";
+    options.OtlpEndpoint = builder.Configuration["Telemetry:OtlpEndpoint"] ?? "http://localhost:4317";
 
     // Instrumentaciones
     options.EnableMassTransit = true;

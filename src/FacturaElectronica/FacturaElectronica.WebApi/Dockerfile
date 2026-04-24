@@ -1,7 +1,7 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
 
-# Crear directorios con permisos correctos ANTES de cambiar al usuario no-root
+# Directorios con permisos correctos antes de cambiar al usuario no-root
 RUN mkdir -p /app/documentos-electronicos/activos \
     && mkdir -p /app/documentos-electronicos/archivados \
     && mkdir -p /app/Certificados \
@@ -12,17 +12,18 @@ USER $APP_UID
 EXPOSE 8080
 EXPOSE 8081
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["MicroServicios/Src/FacturaElectronica/FacturaElectronica.WebApi/FacturaElectronica.WebApi.csproj", "MicroServicios/Src/FacturaElectronica/FacturaElectronica.WebApi/"]
-COPY ["MicroServicios/Src/FacturaElectronica/FacturaElectronica.Aplicacion/FacturaElectronica.Aplicacion.csproj", "MicroServicios/Src/FacturaElectronica/FacturaElectronica.Aplicacion/"]
-COPY ["MicroServicios/Src/FacturaElectronica/FacturaElectronica.Dominio/FacturaElectronica.Dominio.csproj", "MicroServicios/Src/FacturaElectronica/FacturaElectronica.Dominio/"]
-COPY ["MicroServicios/Src/FacturaElectronica/FacturaElectronica.Infraestructura/FacturaElectronica.Infraestructura.csproj", "MicroServicios/Src/FacturaElectronica/FacturaElectronica.Infraestructura/"]
-COPY ["SharedKernel/SharedKernel.csproj", "SharedKernel/"]
-RUN dotnet restore "MicroServicios/Src/FacturaElectronica/FacturaElectronica.WebApi/FacturaElectronica.WebApi.csproj"
+COPY ["src/FacturaElectronica/FacturaElectronica.WebApi/FacturaElectronica.WebApi.csproj", "src/FacturaElectronica/FacturaElectronica.WebApi/"]
+COPY ["src/FacturaElectronica/FacturaElectronica.Aplicacion/FacturaElectronica.Aplicacion.csproj", "src/FacturaElectronica/FacturaElectronica.Aplicacion/"]
+COPY ["src/FacturaElectronica/FacturaElectronica.Dominio/FacturaElectronica.Dominio.csproj", "src/FacturaElectronica/FacturaElectronica.Dominio/"]
+COPY ["src/FacturaElectronica/FacturaElectronica.Infraestructura/FacturaElectronica.Infraestructura.csproj", "src/FacturaElectronica/FacturaElectronica.Infraestructura/"]
+COPY ["src/shared/SharedKernel/SharedKernel.csproj", "src/shared/SharedKernel/"]
+COPY ["src/shared/SmartCore.Telemetry/SmartCore.Telemetry.csproj", "src/shared/SmartCore.Telemetry/"]
+RUN dotnet restore "src/FacturaElectronica/FacturaElectronica.WebApi/FacturaElectronica.WebApi.csproj"
 COPY . .
-WORKDIR "/src/MicroServicios/Src/FacturaElectronica/FacturaElectronica.WebApi"
+WORKDIR "/src/src/FacturaElectronica/FacturaElectronica.WebApi"
 RUN dotnet build "FacturaElectronica.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish

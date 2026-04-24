@@ -1,6 +1,18 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using SmartCore.Telemetry;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ── Telemetry ─────────────────────────────────────────────────────────────────
+builder.Services.AddSmartCoreTelemetry(options =>
+{
+    options.ServiceName    = "api-gateway";
+    options.Version        = "1.0.0";
+    options.Environment    = builder.Environment.EnvironmentName;
+    options.OtlpEndpoint   = builder.Configuration["Telemetry:OtlpEndpoint"] ?? "http://localhost:4317";
+    options.EnableMassTransit = false;
+    options.SamplerRatio   = 1.0;
+});
 
 // ── YARP ─────────────────────────────────────────────────────────────────────
 builder.Services

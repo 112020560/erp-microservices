@@ -27,6 +27,7 @@
     <ItemGroup>
       <ProjectReference Include="..\CreditSystem.Application\CreditSystem.Application.csproj" />
       <ProjectReference Include="..\CreditSystem.Infrastructure\CreditSystem.Infrastructure.csproj" />
+      <ProjectReference Include="..\..\shared\SmartCore.Telemetry\SmartCore.Telemetry.csproj" />
     </ItemGroup>
 
 </Project>

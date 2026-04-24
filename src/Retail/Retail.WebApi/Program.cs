@@ -5,11 +5,22 @@ using Retail.Infrastructure;
 using Retail.WebApi.Extensions;
 using Retail.WebApi.Infrastructure;
 using Serilog;
+using SmartCore.Telemetry;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog((context, loggerConfig) =>
     loggerConfig.ReadFrom.Configuration(context.Configuration));
+
+builder.Services.AddSmartCoreTelemetry(options =>
+{
+    options.ServiceName    = "retail-service";
+    options.Version        = "1.0.0";
+    options.Environment    = builder.Environment.EnvironmentName;
+    options.OtlpEndpoint   = builder.Configuration["Telemetry:OtlpEndpoint"] ?? "http://localhost:4317";
+    options.EnableMassTransit = true;
+    options.SamplerRatio   = 1.0;
+});
 
 builder.Services
     .AddApplicationLayer()

@@ -11,6 +11,7 @@ using FacturaElectronica.Infraestructura.Adapters.Outbound.Web.Hacienda.Extensio
 using FacturaElectronica.WebApi.Extensions;
 using FacturaElectronica.WebApi.Middleware;
 using Serilog;
+using SmartCore.Telemetry;
 // using Microservices.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +23,16 @@ builder.Host.UseSerilog((context, loggerConfig) =>
     var appName = context.HostingEnvironment.ApplicationName;
     loggerConfig.Enrich.WithProperty("ApplicationName", appName)
         .ReadFrom.Configuration(context.Configuration);
+});
+
+builder.Services.AddSmartCoreTelemetry(options =>
+{
+    options.ServiceName    = "factura-electronica-service";
+    options.Version        = "1.0.0";
+    options.Environment    = builder.Environment.EnvironmentName;
+    options.OtlpEndpoint   = builder.Configuration["Telemetry:OtlpEndpoint"] ?? "http://localhost:4317";
+    options.EnableMassTransit = true;
+    options.SamplerRatio   = 1.0;
 });
 
 builder.Services.AddEndpointsApiExplorer();
